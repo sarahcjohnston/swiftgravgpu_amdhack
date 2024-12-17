@@ -1,0 +1,14 @@
+# Host: login8b.pri.cosma.local
+# Branch: master
+# Revision: v1.0.0-359-gdf3f05c9-dirty
+# Compiler: LLVM/Clang, Version: 19.0.0 
+# Number of threads: 1
+# Number of MPI ranks: 1
+# Hydrodynamic scheme: SPHENIX (Borrow+ 2020)
+# Hydrodynamic kernel: Cubic spline (M4)
+# No. of neighbours: 0.00 +/- 0.0000
+# Eta: 0.000000
+# Config: '--disable-compiler-warnings'
+# CFLAGS: '-ipo -O3 -ansi-alias -fma -ftz -fomit-frame-pointer -march=core-avx2 -mavx2 -pthread'
+# Step Properties: Rebuild=1, Redistribute=2, Repartition=4, Statistics=8, Snapshot=16, Restarts=32 STF=64, FOF=128, mesh=256
+#   Step           Time Scale-factor     Redshift      Time-step Time-bins      Updates    g-Updates    s-Updates Sink-Updates    b-Updates  Wall-clock time [ms]  Props    Dead time [ms]

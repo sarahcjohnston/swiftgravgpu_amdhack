@@ -1,0 +1,18 @@
+---
+
+# SWIFT unused parameter file
+# code version: 1.0.0
+# git revision: v1.0.0-359-gdf3f05c9-dirty
+# git branch: master
+# git date: 2024-10-17 21:52:58 +0000
+# current date: 17:06:38 2024-12-17 GMT
+
+TimeIntegration:
+  time_begin: 0.
+  time_end: 1e-2
+
+PowerSpectrum:
+  grid_side_length: 128
+  num_folds: 4
+  requested_spectra: ['matter-matter']
+...

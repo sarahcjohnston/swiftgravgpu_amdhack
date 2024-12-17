@@ -1,4 +1,4 @@
-/*******************************************************************************
+ /*******************************************************************************
  * This file is part of SWIFT.
  * Copyright (c) 2013 Pedro Gonnet (pedro.gonnet@durham.ac.uk)
  *               2016 Matthieu Schaller (schaller@strw.leidenuniv.nl)
@@ -1184,6 +1184,7 @@ static INLINE void runner_dopair_grav_pm_truncated(
   }
 }
 
+extern void pp_offload(int periodic, const float *CoM_i, const float *CoM_j, float rmax_i, float rmax_j, double min_trunc, int* active_i, int* active_j, float *dim, const float *x_i, const float *x_j_arr, const float *y_i, const float *y_j_arr, const float *z_i, const float *z_j_arr, float *pot_i, float *pot_j, float *a_x_i, float *a_y_i, float *a_z_i, float *a_x_j, float *a_y_j, float *a_z_j, float *mass_i_arr, float *mass_j_arr, const float *r_s_inv, float *h_i, float *h_j_arr, const int *gcount_i, const int *gcount_padded_i, const int *gcount_j, const int *gcount_padded_j, int ci_active, int cj_active, const int symmetric, float *epsilon);
 /**
  * @brief Computes the interaction of all the particles in a cell with all the
  * particles of another cell.
@@ -1278,7 +1279,25 @@ void runner_dopair_grav_pp(struct runner *r, struct cell *ci, struct cell *cj,
                          cj_cache, cj->grav.parts, gcount_j, gcount_padded_j,
                          shift_j, CoM_i, ci->grav.multipole, cj,
                          e->gravity_properties);
+                         
+  /*for (int i = 0; i < gcount_i; i++){                   
+  	printf("x_i: %.8f\n", ci_cache->x[i]);}
+  for (int i = 0; i < gcount_padded_j; i++){                   
+  	printf("x_j: %.8f\n", cj_cache->x[i]);}*/
+                         
+  pp_offload(periodic, CoM_i, CoM_j, rmax_i, rmax_j, min_trunc, ci_cache->active, cj_cache->active, dim, ci_cache->x, cj_cache->x, ci_cache->y, cj_cache->y, ci_cache->z, cj_cache->z, ci_cache->pot, cj_cache->pot, ci_cache->a_x, ci_cache->a_y, ci_cache->a_z, cj_cache->a_x, cj_cache->a_y, cj_cache->a_z, ci_cache->m, cj_cache->m, &r_s_inv, ci_cache->epsilon, cj_cache->epsilon, &gcount_i, &gcount_padded_i, &gcount_j, &gcount_padded_j, ci_active, cj_active, symmetric, ci_cache->epsilon);
+  
+  /*printf("gcount_i: %i ", gcount_i);
+  	for (int i = 0; i < gcount_i; i++){
+  		printf("%.16f ", ci_cache->a_x[i]);}
+  	printf("\n");
+  	
+  printf("pot: %i ", gcount_i);
+  for (int i = 0; i < gcount_i; i++){
+  	printf("%.16f ", ci_cache->pot[i]);}
+  printf("\n");*/
 
+  if (2<1){
   /* Can we use the Newtonian version or do we need the truncated one ? */
   if (!periodic) {
 
@@ -1394,6 +1413,7 @@ void runner_dopair_grav_pp(struct runner *r, struct cell *ci, struct cell *cj,
       }
     }
   }
+  }
 
   /* Write back to the particles in ci */
   if (ci_active) {
@@ -1416,6 +1436,14 @@ void runner_dopair_grav_pp(struct runner *r, struct cell *ci, struct cell *cj,
     if (lock_unlock(&cj->grav.plock) != 0) error("Error unlocking cell");
 #endif
   }
+  
+  /*for (int i = 0; i < gcount_i; i++){
+  	printf("%.16f ", ci_cache->a_x[i]);}
+  printf("\n");
+  
+  printf("%.16f %.16f %.16f %.16f\n", ci_cache->a_x[0], ci_cache->a_y[0], ci_cache->a_z[0], ci_cache->pot[0]);
+  printf("%.16f %.16f %.16f %.16f\n", cj_cache->a_x[0], cj_cache->a_y[0], cj_cache->a_z[0], cj_cache->pot[0]);
+  printf("%i %i %i %i\n", gcount_i, gcount_padded_i, gcount_j, gcount_padded_j);*/
 
   TIMER_TOC(timer_dopair_grav_pp);
 }
@@ -2509,7 +2537,7 @@ void runner_do_grav_long_range(struct runner *r, struct cell *ci,
       multi_i->pot.interacted = 1;
 
     } /* We are in charge of this pair */
-  } /* Loop over top-level cells */
+  }   /* Loop over top-level cells */
 
   if (timer) TIMER_TOC(timer_dograv_long_range);
 }

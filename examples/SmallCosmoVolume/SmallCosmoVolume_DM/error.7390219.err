@@ -1,0 +1,8 @@
+
+OneAPI environment modules are now accessible.
+Use module available to see these modules.
+You probably want to:
+module load compiler-rt tbb compiler mpi
+to make the compiler and MPI available.
+
+slurmstepd: error: *** JOB 7390219 ON mad05 CANCELLED AT 2024-10-31T12:20:28 DUE TO TIME LIMIT ***
