@@ -28,13 +28,13 @@ struct cell;
 void runner_do_grav_down(struct runner *r, struct cell *c, int timer);
 
 void runner_dopair_grav_pp(struct runner *r, struct cell *ci, struct cell *cj,
-                           const int symmetric, const int allow_mpole);
+                           const int symmetric, const int allow_mpole, float *d_h_i, float *d_h_j, float *d_mass_i, float *d_mass_j, float *d_x_i, float *d_x_j, float *d_y_i, float *d_y_j, float *d_z_i, float *d_z_j, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_a_x_j, float *d_a_y_j, float *d_a_z_j, float *d_pot_i, float *d_pot_j, int *d_active_i, int *d_active_j, float *d_CoM_i, float *d_CoM_j);
 
 void runner_doself_recursive_grav(struct runner *r, struct cell *c,
-                                  int gettimer);
+                                  int gettimer, float *d_h_i, float *d_h_j, float *d_mass_i, float *d_mass_j, float *d_x_i, float *d_x_j, float *d_y_i, float *d_y_j, float *d_z_i, float *d_z_j, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_a_x_j, float *d_a_y_j, float *d_a_z_j, float *d_pot_i, float *d_pot_j, int *d_active_i, int *d_active_j, float *d_CoM_i, float *d_CoM_j);
 
 void runner_dopair_recursive_grav(struct runner *r, struct cell *ci,
-                                  struct cell *cj, int gettimer);
+                                  struct cell *cj, int gettimer, float *d_h_i, float *d_h_j, float *d_mass_i, float *d_mass_j, float *d_x_i, float *d_x_j, float *d_y_i, float *d_y_j, float *d_z_i, float *d_z_j, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_a_x_j, float *d_a_y_j, float *d_a_z_j, float *d_pot_i, float *d_pot_j, int *d_active_i, int *d_active_j, float *d_CoM_i, float *d_CoM_j);
 
 void runner_dopair_grav_mm_progenies(struct runner *r, const long long flags,
                                      struct cell *restrict ci,
@@ -44,9 +44,9 @@ void runner_do_grav_long_range(struct runner *r, struct cell *ci, int timer);
 
 /* Internal functions (for unit tests and debugging) */
 
-void runner_doself_grav_pp(struct runner *r, struct cell *c);
+void runner_doself_grav_pp(struct runner *r, struct cell *c, float *d_h_i, float *d_mass_i, float *d_x_i, float *d_y_i, float *d_z_i, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_pot_i,int *d_active_i);
 
 void runner_dopair_grav_pp(struct runner *r, struct cell *ci, struct cell *cj,
-                           const int symmetric, const int allow_mpole);
+                           const int symmetric, const int allow_mpole, float *d_h_i, float *d_h_j, float *d_mass_i, float *d_mass_j, float *d_x_i, float *d_x_j, float *d_y_i, float *d_y_j, float *d_z_i, float *d_z_j, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_a_x_j, float *d_a_y_j, float *d_a_z_j, float *d_pot_i, float *d_pot_j, int *d_active_i, int *d_active_j, float *d_CoM_i, float *d_CoM_j);
 
 #endif /* SWIFT_RUNNER_DOIACT_GRAV_H */

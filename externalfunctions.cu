@@ -252,13 +252,13 @@ __device__ void grav_pp_full(int* active, float dim_0, float dim_1, float dim_2,
     int s = blockIdx.y*blockDim.y +threadIdx.y;
     int S = blockDim.y*gridDim.y;
 
-    for (int pid = t; pid < gcount_i; pid+=T) {
+    for (int pid = t; pid < 2*gcount_i; pid+=T) {
 
     //Local accumulators for the acceleration and potential
     float a_x = 0.f, a_y = 0.f, a_z = 0.f, pot = 0.f;
 
     // Loop over every particle in the other cell.
-    for (int pjd = s; pjd < gcount_padded_j; pjd+=S) {
+    for (int pjd = s; pjd < 2*gcount_padded_j; pjd+=S) {
 
       float mass_j = mass_j_arr[pjd];
 
@@ -309,13 +309,13 @@ __device__ void grav_pp_truncated(int* active, float dim_0, float dim_1, float d
     int S = blockDim.y*gridDim.y;
 
   /* Loop over all particles in ci... */
-  for (int pid = t; pid < gcount_i; pid+=T){
+  for (int pid = t; pid < 2*gcount_i; pid+=T){
 
     /* Local accumulators for the acceleration and potential */
     float a_x = 0.f, a_y = 0.f, a_z = 0.f, pot = 0.f;
 
     /* Loop over every particle in the other cell. */
-    for (int pjd = s; pjd < gcount_padded_j; pjd+=S){
+    for (int pjd = s; pjd < 2*gcount_padded_j; pjd+=S){
 
       const float mass_j = mass_j_arr[pjd];
 	
@@ -358,3 +358,121 @@ __device__ void grav_pp_truncated(int* active, float dim_0, float dim_1, float d
   }
 }
 
+//SELF PP FULL INTERACTIONS
+__device__ void doself_grav_pp_full(int* active, float *h_i, float *mass_i_arr, const float *x_i, const float *y_i, const float *z_i, float *a_x_i, float *a_y_i, float *a_z_i, float *pot_i, const int gcount_i, const int gcount_padded_i, const int periodic, int ci_active, int max_r_decision) {
+    
+  int t = blockIdx.x*blockDim.x +threadIdx.x;
+  int T = blockDim.x*gridDim.x;
+  int s = blockIdx.y*blockDim.y +threadIdx.y;
+  int S = blockDim.y*gridDim.y;
+
+  /* Loop over all particles in ci... */
+  for (int pid = t; pid < gcount_i; pid+=T) {
+
+    /* Skip inactive particles */
+    //if (!ci_cache->active[pid]) continue;
+
+    /* Local accumulators for the acceleration */
+    float a_x = 0.f, a_y = 0.f, a_z = 0.f, pot = 0.f;
+
+    /* Loop over every other particle in the cell. */
+    for (int pjd = s; pjd < gcount_padded_i; pjd+=S) {
+
+      /* No self interaction */
+      if (pid == pjd) continue;
+
+      const float mass_i = mass_i_arr[pjd];
+
+      /* Compute the pairwise (square) distance. */
+      /* Note: no need for periodic wrapping inside a cell */
+      float dx = x_i[pjd] - x_i[pid];
+      float dy = y_i[pjd] - y_i[pid];
+      float dz = z_i[pjd] - z_i[pid];
+      const float r2 = dx * dx + dy * dy + dz * dz;
+
+      /* Pick the maximal softening length of i and j */
+      const float h = max(h_i[pid], h_i[pjd]);
+      const float h2 = h * h;
+      const float h_inv = 1.f / h;
+      const float h_inv_3 = h_inv * h_inv * h_inv;
+
+      /* Interact! */
+      float f_ij, pot_ij;
+      iact_grav_pp_full(r2, h2, h_inv, h_inv_3, mass_i, &f_ij, &pot_ij);
+
+      /* Store it back */
+      a_x += f_ij * dx;
+      a_y += f_ij * dy;
+      a_z += f_ij * dz;
+      pot += pot_ij;
+    }
+
+    /* Store everything back into values */ //THIS FEELS DODGY AND WRONG BUT IT WORKS?
+    a_x_i[pid] += atomicAdd(&a_x_i[pid], a_x*active[pid]*ci_active*abs(periodic-1) + a_x*active[pid]*ci_active*periodic*max_r_decision);
+    a_y_i[pid] += atomicAdd(&a_y_i[pid], a_y*active[pid]*ci_active*abs(periodic-1) + a_y*active[pid]*ci_active*periodic*max_r_decision);
+    a_z_i[pid] += atomicAdd(&a_z_i[pid], a_z*active[pid]*ci_active*abs(periodic-1) + a_z*active[pid]*ci_active*periodic*max_r_decision);
+    pot_i[pid] += atomicAdd(&pot_i[pid], pot*active[pid]*ci_active*abs(periodic-1) + pot*active[pid]*ci_active*periodic*max_r_decision);
+  }
+}
+
+
+//SELF PP TRUNCATED INTERACTIONS
+__device__ void doself_grav_pp_truncated(int* active, float *h_i, float *mass_i_arr, float r_s_inv, const float *x_i, const float *y_i, const float *z_i, float *a_x_i, float *a_y_i, float *a_z_i, float *pot_i, const int gcount_i, const int gcount_padded_i, const int periodic, int ci_active, int max_r_decision) {	
+
+  int t = blockIdx.x*blockDim.x +threadIdx.x;
+  int T = blockDim.x*gridDim.x;
+  int s = blockIdx.y*blockDim.y +threadIdx.y;
+  int S = blockDim.y*gridDim.y;
+
+  /* Loop over all particles in ci... */
+  for (int pid = t; pid < gcount_i; pid+=T) {
+
+    /* Skip inactive particles */
+    //if (!ci_cache->active[pid]) continue;
+
+    /* Local accumulators for the acceleration and potential */
+    float a_x = 0.f, a_y = 0.f, a_z = 0.f, pot = 0.f;
+
+    /* Loop over every other particle in the cell. */
+    for (int pjd = s; pjd < gcount_padded_i; pjd+=S) {
+
+      /* No self interaction */
+      if (pid == pjd) continue;
+
+      /* Get info about j */
+      const float mass_i = mass_i_arr[pjd];
+
+      /* Compute the pairwise (square) distance. */
+      /* Note: no need for periodic wrapping inside a cell */
+      float dx = x_i[pjd] - x_i[pid];
+      float dy = y_i[pjd] - y_i[pid];
+      float dz = z_i[pjd] - z_i[pid];
+
+      const float r2 = dx * dx + dy * dy + dz * dz;
+
+      /* Pick the maximal softening length of i and j */
+      const float h = max(h_i[pid], h_i[pjd]);
+      const float h2 = h * h;
+      const float h_inv = 1.f / h;
+      const float h_inv_3 = h_inv * h_inv * h_inv;
+
+      /* Interact! */
+      float f_ij, pot_ij;
+      iact_grav_pp_truncated(r2, h2, h_inv, h_inv_3, mass_i, r_s_inv,
+                                    &f_ij, &pot_ij);
+
+      /* Store it back */
+      a_x += f_ij * dx;
+      a_y += f_ij * dy;
+      a_z += f_ij * dz;
+      pot += pot_ij;
+
+    }
+
+    /* Store everything back into values */ //THIS FEELS DODGY AND WRONG BUT IT WORKS?
+    a_x_i[pid] += atomicAdd(&a_x_i[pid], a_x*active[pid]*ci_active*periodic*abs(max_r_decision-1));
+    a_y_i[pid] += atomicAdd(&a_y_i[pid], a_y*active[pid]*ci_active*periodic*abs(max_r_decision-1));
+    a_z_i[pid] += atomicAdd(&a_z_i[pid], a_z*active[pid]*ci_active*periodic*abs(max_r_decision-1));
+    pot_i[pid] += atomicAdd(&pot_i[pid], pot*active[pid]*ci_active*periodic*abs(max_r_decision-1));
+  }
+}

@@ -15,17 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+CUDALDFLAGS = -L/usr/local/cuda/lib64 -I/usr/local/cuda/include
+CUDALIBS= -lcudadevrt -lcudart -lcuda -lstdc++
+
 # Add the non-standard paths to the included library headers
-AM_CFLAGS = $(HDF5_CPPFLAGS) $(GSL_INCS) $(FFTW_INCS) $(NUMA_INCS) $(GRACKLE_INCS)  $(SUNDIALS_INCS) $(CHEALPIX_CFLAGS)
+AM_CFLAGS = $(HDF5_CPPFLAGS) $(GSL_INCS) $(FFTW_INCS) $(NUMA_INCS) $(GRACKLE_INCS)  $(SUNDIALS_INCS) $(CHEALPIX_CFLAGS) -L/usr/local/cuda/lib64 -I/usr/local/cuda/include
 
 # Assign a "safe" version number
-AM_LDFLAGS = $(HDF5_LDFLAGS) $(FFTW_LIBS)
+AM_LDFLAGS = $(HDF5_LDFLAGS) $(FFTW_LIBS) $(CUDALIBS) 
 
 # The git command, if available.
 GIT_CMD = @GIT_CMD@
 
 # Additional dependencies for shared libraries.
-EXTRA_LIBS = $(GSL_LIBS) $(GMP_LIBS) $(HDF5_LIBS) $(FFTW_LIBS) $(NUMA_LIBS) $(PROFILER_LIBS) $(TCMALLOC_LIBS) $(JEMALLOC_LIBS) $(TBBMALLOC_LIBS) $(GRACKLE_LIBS)  $(SUNDIALS_LIBS) $(CHEALPIX_LIBS)
+EXTRA_LIBS = $(GSL_LIBS) $(GMP_LIBS) $(HDF5_LIBS) $(FFTW_LIBS) $(NUMA_LIBS) $(PROFILER_LIBS) $(TCMALLOC_LIBS) $(JEMALLOC_LIBS) $(TBBMALLOC_LIBS) $(GRACKLE_LIBS)  $(SUNDIALS_LIBS) $(CHEALPIX_LIBS) $(CUDALIBS)
 
 # MPI libraries.
 MPI_LIBS = $(PARMETIS_LIBS) $(METIS_LIBS) $(MPI_THREAD_LIBS)
@@ -79,7 +82,7 @@ include_HEADERS += adaptive_softening.h adaptive_softening_iact.h adaptive_softe
 include_HEADERS += forcing.h
 include_HEADERS += power_spectrum.h
 include_HEADERS += ghost_stats.h
-include_HEADERS += gpu_params.h
+include_HEADERS += gpu_params.h gpu_malloc.h
 
 # source files for EAGLE extra I/O
 EAGLE_EXTRA_IO_SOURCES=
@@ -207,7 +210,7 @@ AM_SOURCES += $(AGORA_FEEDBACK_SOURCES)
 AM_SOURCES += $(PS2020_COOLING_SOURCES)
 AM_SOURCES += $(SPHM1RT_RT_SOURCES)
 AM_SOURCES += $(GEAR_RT_SOURCES)
-AM_SOURCES += gpu_params.c
+AM_SOURCES += gpu_params.c gpu_malloc.cu
 
 # Include files for distribution, not installation.
 nobase_noinst_HEADERS = align.h approx_math.h atomic.h barrier.h cycle.h error.h inline.h kernel_hydro.h kernel_gravity.h 
@@ -508,25 +511,25 @@ nobase_noinst_HEADERS += fvpm_geometry/Gizmo/MFM/fvpm_geometry.h fvpm_geometry/G
 # Sources and special flags for the gravity library
 libgrav_la_SOURCES = runner_doiact_grav.c
 libgrav_la_CFLAGS = $(AM_CFLAGS) $(GRAVITY_CFLAGS)
-libgrav_la_LDFLAGS = $(AM_LDFLAGS) $(EXTRA_LIBS)
+libgrav_la_LDFLAGS = $(AM_LDFLAGS) $(EXTRA_LIBS) $(CUDALDFLAGS)
 
 # Sources and special flags for the gravity MPI library
 libgrav_mpi_la_SOURCES = runner_doiact_grav.c
 libgrav_mpi_la_CFLAGS = $(AM_CFLAGS) $(GRAVITY_CFLAGS) -DWITH_MPI
-libgrav_mpi_la_LDFLAGS = $(AM_LDFLAGS) $(MPI_LIBS) $(EXTRA_LIBS)
+libgrav_mpi_la_LDFLAGS = $(AM_LDFLAGS) $(MPI_LIBS) $(EXTRA_LIBS) $(CUDALDFLAGS)
 
 # Sources and flags for regular library
 libswiftsim_la_SOURCES = $(AM_SOURCES)
 libswiftsim_la_CFLAGS = $(AM_CFLAGS)
-libswiftsim_la_LDFLAGS = $(AM_LDFLAGS) $(EXTRA_LIBS) -version-info 0:0:0
-libswiftsim_la_LIBADD = $(GRACKLE_LIBS) $(VELOCIRAPTOR_LIBS) libgrav.la
+libswiftsim_la_LDFLAGS = $(AM_LDFLAGS) $(EXTRA_LIBS) -version-info 0:0:0 $(CUDALDFLAGS)
+libswiftsim_la_LIBADD = $(GRACKLE_LIBS) $(VELOCIRAPTOR_LIBS) libgrav.la $(CUDALIBS)
 
 # Sources and flags for MPI library
 libswiftsim_mpi_la_SOURCES = $(AM_SOURCES)
 libswiftsim_mpi_la_CFLAGS = $(AM_CFLAGS) $(MPI_FLAGS)
-libswiftsim_mpi_la_LDFLAGS = $(AM_LDFLAGS) $(MPI_LIBS) $(EXTRA_LIBS) -version-info 0:0:0
+libswiftsim_mpi_la_LDFLAGS = $(AM_LDFLAGS) $(MPI_LIBS) $(EXTRA_LIBS) -version-info 0:0:0 $(CUDALDFLAGS)
 libswiftsim_mpi_la_SHORTNAME = mpi
-libswiftsim_mpi_la_LIBADD = $(GRACKLE_LIBS) $(VELOCIRAPTOR_LIBS) $(MPI_LIBS) libgrav_mpi.la
+libswiftsim_mpi_la_LIBADD = $(GRACKLE_LIBS) $(VELOCIRAPTOR_LIBS) $(MPI_LIBS) libgrav_mpi.la $(CUDALIBS)
 
 # Versioning. If any sources change then update the version_string.h file with
 # the current git revision and package version.

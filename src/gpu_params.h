@@ -1,6 +1,7 @@
 #ifndef GPU_PARAMS_H
 #define GPU_PARAMS_H
 
+//#include <cuda.h>
 //#include <cuda_runtime.h>
 
 /* Local includes */

@@ -409,3 +409,12 @@ black_formatting_env
 
 # vscode
 *.json
+
+#snapshots
+*.dat
+*.csv
+*.txt
+
+#profiling
+*.qdrep
+*.xmf

@@ -1184,7 +1184,7 @@ static INLINE void runner_dopair_grav_pm_truncated(
   }
 }
 
-extern void pp_offload(int periodic, const float *CoM_i, const float *CoM_j, float rmax_i, float rmax_j, double min_trunc, int* active_i, int* active_j, float *dim, const float *x_i, const float *x_j_arr, const float *y_i, const float *y_j_arr, const float *z_i, const float *z_j_arr, float *pot_i, float *pot_j, float *a_x_i, float *a_y_i, float *a_z_i, float *a_x_j, float *a_y_j, float *a_z_j, float *mass_i_arr, float *mass_j_arr, const float *r_s_inv, float *h_i, float *h_j_arr, const int *gcount_i, const int *gcount_padded_i, const int *gcount_j, const int *gcount_padded_j, int ci_active, int cj_active, const int symmetric, float *epsilon);
+extern void pair_pp_offload(int periodic, const float *CoM_i, const float *CoM_j, float rmax_i, float rmax_j, double min_trunc, int* active_i, int* active_j, float *dim, const float *x_i, const float *x_j_arr, const float *y_i, const float *y_j_arr, const float *z_i, const float *z_j_arr, float *pot_i, float *pot_j, float *a_x_i, float *a_y_i, float *a_z_i, float *a_x_j, float *a_y_j, float *a_z_j, float *mass_i_arr, float *mass_j_arr, const float *r_s_inv, float *h_i, float *h_j_arr, const int *gcount_i, const int *gcount_padded_i, const int *gcount_j, const int *gcount_padded_j, int ci_active, int cj_active, const int symmetric, float *epsilon, float *d_h_i, float *d_h_j, float *d_mass_i, float *d_mass_j, float *d_x_i, float *d_x_j, float *d_y_i, float *d_y_j, float *d_z_i, float *d_z_j, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_a_x_j, float *d_a_y_j, float *d_a_z_j, float *d_pot_i, float *d_pot_j, int *d_active_i, int *d_active_j, float *d_CoM_i, float *d_CoM_j);
 /**
  * @brief Computes the interaction of all the particles in a cell with all the
  * particles of another cell.
@@ -1205,7 +1205,7 @@ extern void pp_offload(int periodic, const float *CoM_i, const float *CoM_j, flo
  * @param allow_mpole Are we allowing the use of M2P interactions ?
  */
 void runner_dopair_grav_pp(struct runner *r, struct cell *ci, struct cell *cj,
-                           const int symmetric, const int allow_mpole) {
+                           const int symmetric, const int allow_mpole, float *d_h_i, float *d_h_j, float *d_mass_i, float *d_mass_j, float *d_x_i, float *d_x_j, float *d_y_i, float *d_y_j, float *d_z_i, float *d_z_j, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_a_x_j, float *d_a_y_j, float *d_a_z_j, float *d_pot_i, float *d_pot_j, int *d_active_i, int *d_active_j, float *d_CoM_i, float *d_CoM_j) {
 
   /* Recover some useful constants */
   const struct engine *e = r->e;
@@ -1285,7 +1285,7 @@ void runner_dopair_grav_pp(struct runner *r, struct cell *ci, struct cell *cj,
   for (int i = 0; i < gcount_padded_j; i++){                   
   	printf("x_j: %.8f\n", cj_cache->x[i]);}*/
                          
-  pp_offload(periodic, CoM_i, CoM_j, rmax_i, rmax_j, min_trunc, ci_cache->active, cj_cache->active, dim, ci_cache->x, cj_cache->x, ci_cache->y, cj_cache->y, ci_cache->z, cj_cache->z, ci_cache->pot, cj_cache->pot, ci_cache->a_x, ci_cache->a_y, ci_cache->a_z, cj_cache->a_x, cj_cache->a_y, cj_cache->a_z, ci_cache->m, cj_cache->m, &r_s_inv, ci_cache->epsilon, cj_cache->epsilon, &gcount_i, &gcount_padded_i, &gcount_j, &gcount_padded_j, ci_active, cj_active, symmetric, ci_cache->epsilon);
+  pair_pp_offload(periodic, CoM_i, CoM_j, rmax_i, rmax_j, min_trunc, ci_cache->active, cj_cache->active, dim, ci_cache->x, cj_cache->x, ci_cache->y, cj_cache->y, ci_cache->z, cj_cache->z, ci_cache->pot, cj_cache->pot, ci_cache->a_x, ci_cache->a_y, ci_cache->a_z, cj_cache->a_x, cj_cache->a_y, cj_cache->a_z, ci_cache->m, cj_cache->m, &r_s_inv, ci_cache->epsilon, cj_cache->epsilon, &gcount_i, &gcount_padded_i, &gcount_j, &gcount_padded_j, ci_active, cj_active, symmetric, ci_cache->epsilon, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
   
   /*printf("gcount_i: %i ", gcount_i);
   	for (int i = 0; i < gcount_i; i++){
@@ -1795,6 +1795,8 @@ static INLINE void runner_doself_grav_pp_truncated(
   }
 }
 
+
+extern void self_pp_offload(int periodic, float rmax_i, double min_trunc, int* active_i, const float *x_i, const float *y_i, const float *z_i, float *pot_i, float *a_x_i, float *a_y_i, float *a_z_i, float *mass_i_arr, const float *r_s_inv, float *h_i, const int *gcount_i, const int *gcount_padded_i, int ci_active, float *d_h_i, float *d_mass_i, float *d_x_i, float *d_y_i, float *d_z_i, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_pot_i, int *d_active_i);
 /**
  * @brief Computes the interaction of all the particles in a cell with all the
  * other ones.
@@ -1809,7 +1811,7 @@ static INLINE void runner_doself_grav_pp_truncated(
  * @param r The #runner.
  * @param c The #cell.
  */
-void runner_doself_grav_pp(struct runner *r, struct cell *c) {
+void runner_doself_grav_pp(struct runner *r, struct cell *c, float *d_h_i, float *d_mass_i, float *d_x_i, float *d_y_i, float *d_z_i, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_pot_i,int *d_active_i) {
 
   /* Recover some useful constants */
   const struct engine *e = r->e;
@@ -1848,7 +1850,14 @@ void runner_doself_grav_pp(struct runner *r, struct cell *c) {
   gravity_cache_populate_no_mpole(e->max_active_bin, ci_cache, c->grav.parts,
                                   gcount, gcount_padded, loc, c,
                                   e->gravity_properties);
+                                  
+  const float rmax = c->grav.multipole->r_max;
+  const int ci_active =
+      cell_is_active_gravity(c, e) && (c->nodeID == e->nodeID);
+                                  
+  self_pp_offload(periodic, rmax, min_trunc, ci_cache->active, ci_cache->x, ci_cache->y, ci_cache->z, ci_cache->pot, ci_cache->a_x, ci_cache->a_y, ci_cache->a_z, ci_cache->m, &r_s_inv, ci_cache->epsilon, &gcount, &gcount_padded, ci_active, d_h_i, d_mass_i, d_x_i, d_y_i, d_z_i, d_a_x_i, d_a_y_i, d_a_z_i, d_pot_i, d_active_i);
 
+  if(2<1){
   /* Can we use the Newtonian version or do we need the truncated one ? */
   if (!periodic) {
 
@@ -1874,6 +1883,7 @@ void runner_doself_grav_pp(struct runner *r, struct cell *c) {
       runner_doself_grav_pp_full(ci_cache, gcount, gcount_padded, e,
                                  c->grav.parts);
     }
+  }
   }
 
   /* Write back to the particles */
@@ -2218,7 +2228,7 @@ void runner_dopair_recursive_grav_pm(struct runner *r, struct cell *ci,
  * @param gettimer Are we timing this ?
  */
 void runner_dopair_recursive_grav(struct runner *r, struct cell *ci,
-                                  struct cell *cj, const int gettimer) {
+                                  struct cell *cj, const int gettimer, float *d_h_i, float *d_h_j, float *d_mass_i, float *d_mass_j, float *d_x_i, float *d_x_j, float *d_y_i, float *d_y_j, float *d_z_i, float *d_z_j, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_a_x_j, float *d_a_y_j, float *d_a_z_j, float *d_pot_i, float *d_pot_j, int *d_active_i, int *d_active_j, float *d_CoM_i, float *d_CoM_j) {
 
   const struct engine *e = r->e;
 
@@ -2324,7 +2334,7 @@ void runner_dopair_recursive_grav(struct runner *r, struct cell *ci,
   } else if (!ci->split && !cj->split) {
 
     /* We have two leaves. Go P-P. */
-    runner_dopair_grav_pp(r, ci, cj, /*symmetric*/ 1, /*allow_mpoles=*/1);
+    runner_dopair_grav_pp(r, ci, cj, /*symmetric*/ 1, /*allow_mpoles=*/1, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
 
   } else {
 
@@ -2343,7 +2353,7 @@ void runner_dopair_recursive_grav(struct runner *r, struct cell *ci,
         /* Loop over ci's children */
         for (int k = 0; k < 8; k++) {
           if (ci->progeny[k] != NULL)
-            runner_dopair_recursive_grav(r, ci->progeny[k], cj, 0);
+            runner_dopair_recursive_grav(r, ci->progeny[k], cj, 0, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
         }
 
       } else {
@@ -2354,7 +2364,7 @@ void runner_dopair_recursive_grav(struct runner *r, struct cell *ci,
         /* Loop over cj's children */
         for (int k = 0; k < 8; k++) {
           if (cj->progeny[k] != NULL)
-            runner_dopair_recursive_grav(r, ci, cj->progeny[k], 0);
+            runner_dopair_recursive_grav(r, ci, cj->progeny[k], 0, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
         }
       }
     } else {
@@ -2365,7 +2375,7 @@ void runner_dopair_recursive_grav(struct runner *r, struct cell *ci,
         /* Loop over cj's children */
         for (int k = 0; k < 8; k++) {
           if (cj->progeny[k] != NULL)
-            runner_dopair_recursive_grav(r, ci, cj->progeny[k], 0);
+            runner_dopair_recursive_grav(r, ci, cj->progeny[k], 0, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
         }
 
       } else {
@@ -2376,7 +2386,7 @@ void runner_dopair_recursive_grav(struct runner *r, struct cell *ci,
         /* Loop over ci's children */
         for (int k = 0; k < 8; k++) {
           if (ci->progeny[k] != NULL)
-            runner_dopair_recursive_grav(r, ci->progeny[k], cj, 0);
+            runner_dopair_recursive_grav(r, ci->progeny[k], cj, 0, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
         }
       }
     }
@@ -2396,7 +2406,7 @@ void runner_dopair_recursive_grav(struct runner *r, struct cell *ci,
  * @param gettimer Are we timing this ?
  */
 void runner_doself_recursive_grav(struct runner *r, struct cell *c,
-                                  const int gettimer) {
+                                  const int gettimer, float *d_h_i, float *d_h_j, float *d_mass_i, float *d_mass_j, float *d_x_i, float *d_x_j, float *d_y_i, float *d_y_j, float *d_z_i, float *d_z_j, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_a_x_j, float *d_a_y_j, float *d_a_z_j, float *d_pot_i, float *d_pot_j, int *d_active_i, int *d_active_j, float *d_CoM_i, float *d_CoM_j) {
 
   /* Some constants */
   const struct engine *e = r->e;
@@ -2421,12 +2431,12 @@ void runner_doself_recursive_grav(struct runner *r, struct cell *c,
     for (int j = 0; j < 8; j++) {
       if (c->progeny[j] != NULL) {
 
-        runner_doself_recursive_grav(r, c->progeny[j], 0);
+        runner_doself_recursive_grav(r, c->progeny[j], 0, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
 
         for (int k = j + 1; k < 8; k++) {
           if (c->progeny[k] != NULL) {
 
-            runner_dopair_recursive_grav(r, c->progeny[j], c->progeny[k], 0);
+            runner_dopair_recursive_grav(r, c->progeny[j], c->progeny[k], 0, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
           }
         }
       }
@@ -2436,7 +2446,7 @@ void runner_doself_recursive_grav(struct runner *r, struct cell *c,
   /* If the cell is not split, then just go for it... */
   else {
 
-    runner_doself_grav_pp(r, c);
+    runner_doself_grav_pp(r, c, d_h_i, d_mass_i, d_x_i, d_y_i, d_z_i, d_a_x_i, d_a_y_i, d_a_z_i, d_pot_i, d_active_i);
   }
 
   if (gettimer) TIMER_TOC(timer_dosub_self_grav);
@@ -2531,7 +2541,7 @@ void runner_do_grav_long_range(struct runner *r, struct cell *ci,
 
       /* Call the PM interaction fucntion on the active sub-cells of ci */
       runner_dopair_grav_mm_nonsym(r, ci, cj);
-      // runner_dopair_recursive_grav_pm(r, ci, cj);
+      runner_dopair_recursive_grav_pm(r, ci, cj);
 
       /* Record that this multipole received a contribution */
       multi_i->pot.interacted = 1;

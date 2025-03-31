@@ -3230,6 +3230,7 @@ void engine_numa_policies(int rank, int verbose) {
 #endif
 }
 
+
 /**
  * @brief init an engine struct with the necessary properties for the
  *        simulation.
@@ -3298,6 +3299,7 @@ void engine_init(
     struct fof_props *fof_properties, struct los_props *los_properties,
     struct lightcone_array_props *lightcone_array_properties,
     struct ic_info *ics_metadata) {
+   
 
   struct clocks_time tic, toc;
   if (engine_rank == 0) clocks_gettime(&tic);
@@ -3577,8 +3579,7 @@ void engine_init(
   }
 #endif
 
-  /* In GPU land, we need to get all our device info and create our cuda
-   * streams. */
+  /* In GPU land, we need to get all our device info */
   e->gpu_info = gpu_init_info(params);
   //engine_cuda_init_streams(e->gpu_info->nr_streams);
 }
