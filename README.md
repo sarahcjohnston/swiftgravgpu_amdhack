@@ -1,3 +1,21 @@
+Starting Notes
+==============
+
+This is the most recent version of my work on the code - it is not necessarily all totally correct (in either science or execution right now) but I believe it is all functional. It's still all in CUDA right now as converting to HIP has proven to be tough with the way this new version of the code is set up. 
+
+To convert to HIP there are a few options:
+- convert each file containing CUDA manually using hipify (hipify-perl script)
+- try the header based conversion [hipifly](https://github.com/amd/HPCTrainingExamples/tree/main/hipifly) (which I can't get working yet)
+- anything else you can think of that works
+
+The Makefile will also need to be updated to build for HIP.
+
+Files that contain CUDA snippets should be:
+- externalfunctions.cu
+- grav_pp_offload.cu
+- runner_main.c
+
+
 <a name="logo"/>
 <div align="center">
 <a href="https://www.swiftsim.com/" target="_blank">
