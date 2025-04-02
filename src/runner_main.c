@@ -34,8 +34,8 @@
 extern "C" {
 #endif
 /* GPU headers */
-#include <cuda.h>
-#include <cuda_runtime.h>
+//#include "hip.h"
+#include "hip/hip_runtime.h"
 #ifdef __cplusplus
 }
 #endif
@@ -220,58 +220,58 @@ void *runner_main(void *data) {
 	int ncells = 1; //THIS VERSION ONLY WORKS FOR ONE CELL (which does somewhat negate the purpose but its getting there...)
 
 	//allocate memory on host
-	cudaMallocHost((void **)&h_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&h_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&mass_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&mass_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&x_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&x_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&y_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&y_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&z_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&z_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&a_x_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&a_y_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&a_z_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&a_x_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&a_y_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&a_z_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&pot_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&pot_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&active_i, ncells * max_cell_size * sizeof(int));
-	cudaMallocHost((void **)&active_j, ncells * max_cell_size * sizeof(int));
-	cudaMallocHost((void **)&CoM_i, ncells * 3 * sizeof(float));
-	cudaMallocHost((void **)&CoM_j, ncells * 3 * sizeof(float));
+	hipMallocHost((void **)&h_i, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&h_j, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&mass_i, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&mass_j, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&x_i, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&x_j, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&y_i, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&y_j, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&z_i, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&z_j, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&a_x_i, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&a_y_i, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&a_z_i, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&a_x_j, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&a_y_j, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&a_z_j, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&pot_i, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&pot_j, ncells * max_cell_size * sizeof(float));
+	hipMallocHost((void **)&active_i, ncells * max_cell_size * sizeof(int));
+	hipMallocHost((void **)&active_j, ncells * max_cell_size * sizeof(int));
+	hipMallocHost((void **)&CoM_i, ncells * 3 * sizeof(float));
+	hipMallocHost((void **)&CoM_j, ncells * 3 * sizeof(float));
 
 	//allocate memory on device
-	cudaMalloc((void **)&d_h_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_h_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_mass_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_mass_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_x_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_x_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_y_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_y_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_z_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_z_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_a_x_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_a_y_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_a_z_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_a_x_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_a_y_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_a_z_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_pot_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_pot_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_active_i, ncells * max_cell_size * sizeof(int));
-	cudaMalloc((void **)&d_active_j, ncells * max_cell_size * sizeof(int));
-	cudaMalloc((void **)&d_CoM_i, ncells * 3 * sizeof(float));
-	cudaMalloc((void **)&d_CoM_j, ncells * 3 * sizeof(float));
+	hipMalloc((void **)&d_h_i, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_h_j, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_mass_i, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_mass_j, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_x_i, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_x_j, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_y_i, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_y_j, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_z_i, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_z_j, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_a_x_i, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_a_y_i, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_a_z_i, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_a_x_j, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_a_y_j, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_a_z_j, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_pot_i, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_pot_j, ncells * max_cell_size * sizeof(float));
+	hipMalloc((void **)&d_active_i, ncells * max_cell_size * sizeof(int));
+	hipMalloc((void **)&d_active_j, ncells * max_cell_size * sizeof(int));
+	hipMalloc((void **)&d_CoM_i, ncells * 3 * sizeof(float));
+	hipMalloc((void **)&d_CoM_j, ncells * 3 * sizeof(float));
 	
 	int pack_count = 0;
     
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess) 
-    	printf("Error1: %s\n", cudaGetErrorString(err));
+    hipError_t err = hipGetLastError();
+    if (err != hipSuccess) 
+    	printf("Error1: %s\n", hipGetErrorString(err));
 
     /* Loop while there are tasks... */
     while (1) {
@@ -370,55 +370,55 @@ void *runner_main(void *data) {
             	printf("Outbound! GPU: %f CPU: %f \n", a_x_i[(pack_count-1)*max_cell_size+1], ci_cache->a_x[1]);
             	
             	//now copy all the arrays to the device
-            	cudaMemcpyAsync(d_h_i, h_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-            	cudaMemcpyAsync(d_h_j, h_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_mass_i, mass_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_mass_j, mass_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_x_i, x_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_y_i, y_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_z_i, z_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_x_j, x_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_y_j, y_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_z_j, z_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_a_x_i, a_x_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_a_y_i, a_y_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_a_z_i, a_z_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_a_x_j, a_x_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_a_y_j, a_y_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_a_z_j, a_z_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_pot_i, pot_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_pot_j, pot_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_active_i, active_i, ncells * max_cell_size * sizeof(int), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_active_j, active_j, ncells * max_cell_size * sizeof(int), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_CoM_i, CoM_i, ncells * 3 * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_CoM_j, CoM_j, ncells * 3 * sizeof(float), cudaMemcpyHostToDevice, 0);
+            	hipMemcpyAsync(d_h_i, h_i, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+            	hipMemcpyAsync(d_h_j, h_j, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_mass_i, mass_i, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_mass_j, mass_j, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_x_i, x_i, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_y_i, y_i, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_z_i, z_i, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_x_j, x_j, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_y_j, y_j, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_z_j, z_j, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_a_x_i, a_x_i, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_a_y_i, a_y_i, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_a_z_i, a_z_i, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_a_x_j, a_x_j, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_a_y_j, a_y_j, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_a_z_j, a_z_j, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_pot_i, pot_i, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_pot_j, pot_j, ncells * max_cell_size * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_active_i, active_i, ncells * max_cell_size * sizeof(int), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_active_j, active_j, ncells * max_cell_size * sizeof(int), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_CoM_i, CoM_i, ncells * 3 * sizeof(float), hipMemcpyHostToDevice, 0);
+		hipMemcpyAsync(d_CoM_j, CoM_j, ncells * 3 * sizeof(float), hipMemcpyHostToDevice, 0);
 		
-		cudaError_t err = cudaGetLastError();
-    		if (err != cudaSuccess) 
-    			printf("Error2: %s\n", cudaGetErrorString(err));
+		hipError_t err = hipGetLastError();
+    		if (err != hipSuccess) 
+    			printf("Error2: %s\n", hipGetErrorString(err));
     			
-    		//cudaDeviceSynchronize();
+    		//hipDeviceSynchronize();
     			
     		runner_doself_recursive_grav(r, ci, 1, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
     		
-    		//cudaDeviceSynchronize();
+    		//hipDeviceSynchronize();
 		
 		a_x_i[1] = 0.f;
 		printf("Reset to 0: %f \n", a_x_i[(pack_count-1)*max_cell_size+1]);
 	
-		cudaMemcpyAsync(a_x_i, d_a_x_i, ncells * max_cell_size * sizeof(float), cudaMemcpyDeviceToHost, 0);
-		cudaMemcpyAsync(a_y_i, d_a_y_i, ncells * max_cell_size * sizeof(float), cudaMemcpyDeviceToHost, 0);
-		cudaMemcpyAsync(a_z_i, d_a_z_i, ncells * max_cell_size * sizeof(float), cudaMemcpyDeviceToHost, 0);
-		cudaMemcpyAsync(a_x_j, d_a_x_j, ncells * max_cell_size * sizeof(float), cudaMemcpyDeviceToHost, 0);
-		cudaMemcpyAsync(a_y_j, d_a_y_j, ncells * max_cell_size * sizeof(float), cudaMemcpyDeviceToHost, 0);
-		cudaMemcpyAsync(a_z_j, d_a_z_j, ncells * max_cell_size * sizeof(float), cudaMemcpyDeviceToHost, 0);
-		cudaMemcpyAsync(pot_i, d_pot_i, ncells * max_cell_size * sizeof(float), cudaMemcpyDeviceToHost, 0);
-		cudaMemcpyAsync(pot_j, d_pot_j, ncells * max_cell_size * sizeof(float), cudaMemcpyDeviceToHost, 0);
+		hipMemcpyAsync(a_x_i, d_a_x_i, ncells * max_cell_size * sizeof(float), hipMemcpyDeviceToHost, 0);
+		hipMemcpyAsync(a_y_i, d_a_y_i, ncells * max_cell_size * sizeof(float), hipMemcpyDeviceToHost, 0);
+		hipMemcpyAsync(a_z_i, d_a_z_i, ncells * max_cell_size * sizeof(float), hipMemcpyDeviceToHost, 0);
+		hipMemcpyAsync(a_x_j, d_a_x_j, ncells * max_cell_size * sizeof(float), hipMemcpyDeviceToHost, 0);
+		hipMemcpyAsync(a_y_j, d_a_y_j, ncells * max_cell_size * sizeof(float), hipMemcpyDeviceToHost, 0);
+		hipMemcpyAsync(a_z_j, d_a_z_j, ncells * max_cell_size * sizeof(float), hipMemcpyDeviceToHost, 0);
+		hipMemcpyAsync(pot_i, d_pot_i, ncells * max_cell_size * sizeof(float), hipMemcpyDeviceToHost, 0);
+		hipMemcpyAsync(pot_j, d_pot_j, ncells * max_cell_size * sizeof(float), hipMemcpyDeviceToHost, 0);
 		
-		cudaDeviceSynchronize();
-		cudaError_t err3 = cudaGetLastError();
-    		if (err != cudaSuccess) 
-    			printf("Error4: %s\n", cudaGetErrorString(err3));
+		hipDeviceSynchronize();
+		hipError_t err3 = hipGetLastError();
+    		if (err != hipSuccess) 
+    			printf("Error4: %s\n", hipGetErrorString(err3));
 		
 		printf("Inbound! GPU: %f \n", a_x_i[(pack_count-1)*max_cell_size+1]);
 		//for(int pack=0; pack<pack_count; pack++){
@@ -888,28 +888,28 @@ void *runner_main(void *data) {
       t = scheduler_done(sched, t); //This will unlock my deps and unleash hell!
       //}
     } /* main loop. */
-  cudaFree(d_h_i);
-  cudaFree(d_h_j);
-  cudaFree(d_mass_i);
-  cudaFree(d_mass_j);
-  cudaFree(d_x_i);
-  cudaFree(d_x_j);
-  cudaFree(d_y_i);
-  cudaFree(d_y_j);
-  cudaFree(d_z_i);
-  cudaFree(d_z_j);
-  cudaFree(d_a_x_i);
-  cudaFree(d_a_y_i);
-  cudaFree(d_a_z_i);
-  cudaFree(d_a_x_j);
-  cudaFree(d_a_y_j);
-  cudaFree(d_a_z_j);
-  cudaFree(d_pot_i);
-  cudaFree(d_pot_j);
-  cudaFree(d_active_i);
-  cudaFree(d_active_j);
-  cudaFree(d_CoM_i);
-  cudaFree(d_CoM_j);
+  hipFree(d_h_i);
+  hipFree(d_h_j);
+  hipFree(d_mass_i);
+  hipFree(d_mass_j);
+  hipFree(d_x_i);
+  hipFree(d_x_j);
+  hipFree(d_y_i);
+  hipFree(d_y_j);
+  hipFree(d_z_i);
+  hipFree(d_z_j);
+  hipFree(d_a_x_i);
+  hipFree(d_a_y_i);
+  hipFree(d_a_z_i);
+  hipFree(d_a_x_j);
+  hipFree(d_a_y_j);
+  hipFree(d_a_z_j);
+  hipFree(d_pot_i);
+  hipFree(d_pot_j);
+  hipFree(d_active_i);
+  hipFree(d_active_j);
+  hipFree(d_CoM_i);
+  hipFree(d_CoM_j);
   }
   /* Be kind, rewind. */
   return NULL;
