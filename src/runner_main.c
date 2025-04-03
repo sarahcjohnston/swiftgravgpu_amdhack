@@ -347,27 +347,16 @@ void *runner_main(void *data) {
             for (int i = 0; i < max_cell_size;
                  i++) {  // change to gcount for cell
               h_i[pack_count * max_cell_size + i] = ci_cache->epsilon[i];
-              h_j[pack_count * max_cell_size + i] = cj_cache->epsilon[i];
               mass_i[pack_count * max_cell_size + i] = ci_cache->m[i];
-              mass_j[pack_count * max_cell_size + i] = cj_cache->m[i];
               x_i[pack_count * max_cell_size + i] = ci_cache->x[i];
-              x_j[pack_count * max_cell_size + i] = cj_cache->x[i];
               y_i[pack_count * max_cell_size + i] = ci_cache->y[i];
-              y_j[pack_count * max_cell_size + i] = cj_cache->y[i];
               z_i[pack_count * max_cell_size + i] = ci_cache->z[i];
-              z_j[pack_count * max_cell_size + i] = cj_cache->z[i];
               a_x_i[pack_count * max_cell_size + i] = ci_cache->a_x[i];
-              a_x_j[pack_count * max_cell_size + i] = cj_cache->a_x[i];
               a_y_i[pack_count * max_cell_size + i] = ci_cache->a_y[i];
-              a_y_j[pack_count * max_cell_size + i] = cj_cache->a_y[i];
               a_z_i[pack_count * max_cell_size + i] = ci_cache->a_z[i];
-              a_z_j[pack_count * max_cell_size + i] = cj_cache->a_z[i];
               pot_i[pack_count * max_cell_size + i] = ci_cache->pot[i];
-              pot_j[pack_count * max_cell_size + i] = cj_cache->pot[i];
               active_i[pack_count * max_cell_size + i] = ci_cache->active[i];
-              active_j[pack_count * max_cell_size + i] = cj_cache->active[i];
               CoM_i[pack_count * max_cell_size + i] = ci_cache->active[i];
-              CoM_j[pack_count * max_cell_size + i] = cj_cache->active[i];
               // add two arrays for each particle to idenify where cj starts and
               // ends
             }
@@ -385,13 +374,7 @@ void *runner_main(void *data) {
               cudaMemcpyAsync(d_h_i, h_i,
                               ncells * max_cell_size * sizeof(float),
                               cudaMemcpyHostToDevice, 0);
-              cudaMemcpyAsync(d_h_j, h_j,
-                              ncells * max_cell_size * sizeof(float),
-                              cudaMemcpyHostToDevice, 0);
               cudaMemcpyAsync(d_mass_i, mass_i,
-                              ncells * max_cell_size * sizeof(float),
-                              cudaMemcpyHostToDevice, 0);
-              cudaMemcpyAsync(d_mass_j, mass_j,
                               ncells * max_cell_size * sizeof(float),
                               cudaMemcpyHostToDevice, 0);
               cudaMemcpyAsync(d_x_i, x_i,
@@ -403,15 +386,6 @@ void *runner_main(void *data) {
               cudaMemcpyAsync(d_z_i, z_i,
                               ncells * max_cell_size * sizeof(float),
                               cudaMemcpyHostToDevice, 0);
-              cudaMemcpyAsync(d_x_j, x_j,
-                              ncells * max_cell_size * sizeof(float),
-                              cudaMemcpyHostToDevice, 0);
-              cudaMemcpyAsync(d_y_j, y_j,
-                              ncells * max_cell_size * sizeof(float),
-                              cudaMemcpyHostToDevice, 0);
-              cudaMemcpyAsync(d_z_j, z_j,
-                              ncells * max_cell_size * sizeof(float),
-                              cudaMemcpyHostToDevice, 0);
               cudaMemcpyAsync(d_a_x_i, a_x_i,
                               ncells * max_cell_size * sizeof(float),
                               cudaMemcpyHostToDevice, 0);
@@ -421,30 +395,11 @@ void *runner_main(void *data) {
               cudaMemcpyAsync(d_a_z_i, a_z_i,
                               ncells * max_cell_size * sizeof(float),
                               cudaMemcpyHostToDevice, 0);
-              cudaMemcpyAsync(d_a_x_j, a_x_j,
-                              ncells * max_cell_size * sizeof(float),
-                              cudaMemcpyHostToDevice, 0);
-              cudaMemcpyAsync(d_a_y_j, a_y_j,
-                              ncells * max_cell_size * sizeof(float),
-                              cudaMemcpyHostToDevice, 0);
-              cudaMemcpyAsync(d_a_z_j, a_z_j,
-                              ncells * max_cell_size * sizeof(float),
-                              cudaMemcpyHostToDevice, 0);
               cudaMemcpyAsync(d_pot_i, pot_i,
-                              ncells * max_cell_size * sizeof(float),
-                              cudaMemcpyHostToDevice, 0);
-              cudaMemcpyAsync(d_pot_j, pot_j,
                               ncells * max_cell_size * sizeof(float),
                               cudaMemcpyHostToDevice, 0);
               cudaMemcpyAsync(d_active_i, active_i,
                               ncells * max_cell_size * sizeof(int),
-                              cudaMemcpyHostToDevice, 0);
-              cudaMemcpyAsync(d_active_j, active_j,
-                              ncells * max_cell_size * sizeof(int),
-                              cudaMemcpyHostToDevice, 0);
-              cudaMemcpyAsync(d_CoM_i, CoM_i, ncells * 3 * sizeof(float),
-                              cudaMemcpyHostToDevice, 0);
-              cudaMemcpyAsync(d_CoM_j, CoM_j, ncells * 3 * sizeof(float),
                               cudaMemcpyHostToDevice, 0);
 
               cudaError_t err = cudaGetLastError();
@@ -472,19 +427,7 @@ void *runner_main(void *data) {
               cudaMemcpyAsync(a_z_i, d_a_z_i,
                               ncells * max_cell_size * sizeof(float),
                               cudaMemcpyDeviceToHost, 0);
-              cudaMemcpyAsync(a_x_j, d_a_x_j,
-                              ncells * max_cell_size * sizeof(float),
-                              cudaMemcpyDeviceToHost, 0);
-              cudaMemcpyAsync(a_y_j, d_a_y_j,
-                              ncells * max_cell_size * sizeof(float),
-                              cudaMemcpyDeviceToHost, 0);
-              cudaMemcpyAsync(a_z_j, d_a_z_j,
-                              ncells * max_cell_size * sizeof(float),
-                              cudaMemcpyDeviceToHost, 0);
               cudaMemcpyAsync(pot_i, d_pot_i,
-                              ncells * max_cell_size * sizeof(float),
-                              cudaMemcpyDeviceToHost, 0);
-              cudaMemcpyAsync(pot_j, d_pot_j,
                               ncells * max_cell_size * sizeof(float),
                               cudaMemcpyDeviceToHost, 0);
 
