@@ -38,7 +38,7 @@ MYFLAGS =
 # Add the source directory and the non-standard paths to the included library headers to CFLAGS
 AM_CFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/argparse $(HDF5_CPPFLAGS) \
 	$(GSL_INCS) $(FFTW_INCS) $(NUMA_INCS) $(GRACKLE_INCS) \
-	$(CHEALPIX_CFLAGS)
+	$(CHEALPIX_CFLAGS) -D__HIP_PLATFORM_AMD__
 
 AM_LDFLAGS = $(HDF5_LDFLAGS)
 
@@ -82,34 +82,20 @@ ENGINE_POLICY_SETAFFINITY=
 endif
 
 #  CUDA sources.
-cuda_grav.o: grav_pp_offload.cu
-	nvcc -dc grav_pp_offload.cu -o cuda_grav.o -arch=native -I./src -I. -fmad=false
-
-link_grav.o: cuda_grav.o
-	nvcc cuda_grav.o -arch=native -o link_grav.o -lcudadevrt -lcudart -dlink
-	
-cuda_malloc.o: gpu_malloc.cu
-	nvcc -dc gpu_malloc.cu -o cuda_malloc.o -arch=native -I./src -I. -fmad=false
-
-link_malloc.o: cuda_malloc.o
-	nvcc cuda_malloc.o -arch=native -o link_malloc.o -lcudadevrt -lcudart -dlink
-
-
-CUDALDFLAGS = -L/usr/local/cuda/lib64
-CUDALIBS= -lcudadevrt -lcudart -lcuda -lstdc++
-
+cuda_grav.o: grav_pp_offload.cpp
+	hipcc -c grav_pp_offload.cpp -o cuda_grav.o -I./src -I. -D__HIP_PLATFORM_AMD__ -L/opt/rocm-6.3.3 -lamdhip64
 
 # Sources for swift
 swift_SOURCES = swift.c
 swift_CFLAGS = $(MYFLAGS) $(AM_CFLAGS) -DENGINE_POLICY="engine_policy_keep $(ENGINE_POLICY_SETAFFINITY)"
 swift_LDFLAGS = $(CUDALDFLAGS)
-swift_LDADD =  cuda_grav.o link_grav.o cuda_malloc.o link_malloc.o src/libswiftsim.la argparse/libargparse.la $(VELOCIRAPTOR_LIBS) $(EXTRA_LIBS) $(LD_CSDS) $(CUDALIBS)
+swift_LDADD =  cuda_grav.o  src/libswiftsim.la argparse/libargparse.la $(VELOCIRAPTOR_LIBS) $(EXTRA_LIBS) $(LD_CSDS) -L/opt/rocm-6.3.3/lib -lamdhip64
 
 # Sources for swift_mpi, do we need an affinity policy for MPI?
 swift_mpi_SOURCES = swift.c
 swift_mpi_CFLAGS = $(MYFLAGS) $(AM_CFLAGS) $(MPI_FLAGS) -DENGINE_POLICY="engine_policy_keep $(ENGINE_POLICY_SETAFFINITY)"
 swift_mpi_LDFLAGS = $(CUDALDFLAGS)
-swift_mpi_LDADD =  cuda_grav.o link_grav.o cuda_malloc.o link_malloc.o src/libswiftsim_mpi.la argparse/libargparse.la $(MPI_LIBS) $(VELOCIRAPTOR_MPI_LIBS) $(EXTRA_LIBS) $(LD_CSDS) $(CUDALIBS)
+swift_mpi_LDADD =  cuda_grav.o src/libswiftsim_mpi.la argparse/libargparse.la $(MPI_LIBS) $(VELOCIRAPTOR_MPI_LIBS) $(EXTRA_LIBS) $(LD_CSDS) -L/opt/rocm-6.3.3/lib -lamdhip64
 
 # Sources for fof
 fof_SOURCES = swift_fof.c
@@ -123,3 +109,4 @@ fof_mpi_LDADD =  src/.libs/libswiftsim_mpi.a argparse/.libs/libargparse.a $(MPI_
 
 # Non-standard files that should be part of the distribution.
 EXTRA_DIST = INSTALL.swift .clang-format format.sh
+
