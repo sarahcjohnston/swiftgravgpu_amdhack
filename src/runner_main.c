@@ -356,7 +356,7 @@ void *runner_main(void *data) {
               a_z_i[pack_count * max_cell_size + i] = ci_cache->a_z[i];
               pot_i[pack_count * max_cell_size + i] = ci_cache->pot[i];
               active_i[pack_count * max_cell_size + i] = ci_cache->active[i];
-              CoM_i[pack_count * max_cell_size + i] = ci_cache->active[i];
+              //CoM_i[pack_count * max_cell_size + i] = ci_cache->active[i];
               // add two arrays for each particle to idenify where cj starts and
               // ends
             }
