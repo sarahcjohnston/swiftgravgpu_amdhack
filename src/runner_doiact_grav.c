@@ -1843,6 +1843,110 @@ extern void self_pp_offload(int periodic, float rmax_i, double min_trunc,
  * @brief Computes the interaction of all the particles in a cell with all the
  * other ones.
  *
+ * This is a GPU version of the function which ignores doing any form of
+ * recursion or offloads, we might as well use the compute at our fingertips.
+ *
+ * @param r The #runner.
+ * @param c The #cell.
+ */
+void runner_doself_grav_pp_gpu(struct runner *r, struct cell *c, float *d_h_i,
+                               float *d_mass_i, float *d_x_i, float *d_y_i,
+                               float *d_z_i, float *d_a_x_i, float *d_a_y_i,
+                               float *d_a_z_i, float *d_pot_i,
+                               int *d_active_i) {
+
+  /* Recover some useful constants */
+  const struct engine *e = r->e;
+  const int periodic = e->mesh->periodic;
+  const float r_s_inv = e->mesh->r_s_inv;
+  const double min_trunc = e->mesh->r_cut_min;
+
+  TIMER_TIC;
+
+#ifdef SWIFT_DEBUG_CHECKS
+  if (c->grav.count == 0) error("Doing self gravity on an empty cell !");
+#endif
+
+  /* Anything to do here? */
+  if (!cell_is_active_gravity(c, e)) return;
+
+  /* Do we need to start by drifting things ? */
+  if (!cell_are_gpart_drifted(c, e)) error("Un-drifted gparts");
+
+  /* Start by constructing a cache for the particles */
+  struct gravity_cache *const ci_cache = &r->ci_gravity_cache;
+
+  /* Shift to apply to the particles in the cell */
+  const double loc[3] = {c->loc[0] + 0.5 * c->width[0],
+                         c->loc[1] + 0.5 * c->width[1],
+                         c->loc[2] + 0.5 * c->width[2]};
+
+  /* Computed the padded counts */
+  const int gcount = c->grav.count;
+  const int gcount_padded = gcount - (gcount % VEC_SIZE) + VEC_SIZE;
+
+  /* Fill the cache */
+  gravity_cache_populate_no_mpole(e->max_active_bin, ci_cache, c->grav.parts,
+                                  gcount, gcount_padded, loc, c,
+                                  e->gravity_properties);
+
+  const float rmax = c->grav.multipole->r_max;
+  const int ci_active =
+      cell_is_active_gravity(c, e) && (c->nodeID == e->nodeID);
+
+  self_pp_offload(periodic, rmax, min_trunc, ci_cache->active, ci_cache->x,
+                  ci_cache->y, ci_cache->z, ci_cache->pot, ci_cache->a_x,
+                  ci_cache->a_y, ci_cache->a_z, ci_cache->m, &r_s_inv,
+                  ci_cache->epsilon, &gcount, &gcount_padded, ci_active, d_h_i,
+                  d_mass_i, d_x_i, d_y_i, d_z_i, d_a_x_i, d_a_y_i, d_a_z_i,
+                  d_pot_i, d_active_i);
+
+  /* Physhic damage! */
+  if (2 < 1) {
+    /* Can we use the Newtonian version or do we need the truncated one ? */
+    if (!periodic) {
+
+      /* Not periodic -> Can always use Newtonian potential */
+      runner_doself_grav_pp_full(ci_cache, gcount, gcount_padded, e,
+                                 c->grav.parts);
+
+    } else {
+
+      /* Get the maximal distance between any two particles */
+      const double max_r = 2. * c->grav.multipole->r_max;
+
+      /* Do we need to use the truncated interactions ? */
+      if (max_r > min_trunc) {
+
+        /* Periodic but far-away cells must use the truncated potential */
+        runner_doself_grav_pp_truncated(ci_cache, gcount, gcount_padded,
+                                        r_s_inv, e, c->grav.parts);
+
+      } else {
+
+        /* Periodic but close-by cells can use the full Newtonian potential */
+        runner_doself_grav_pp_full(ci_cache, gcount, gcount_padded, e,
+                                   c->grav.parts);
+      }
+    }
+  }
+
+  /* Write back to the particles */
+#ifndef SWIFT_TASKS_WITHOUT_ATOMICS
+  lock_lock(&c->grav.plock);
+#endif
+  gravity_cache_write_back(ci_cache, c->grav.parts, gcount);
+#ifndef SWIFT_TASKS_WITHOUT_ATOMICS
+  if (lock_unlock(&c->grav.plock) != 0) error("Error unlocking cell");
+#endif
+
+  TIMER_TOC(timer_doself_grav_pp);
+}
+
+/**
+ * @brief Computes the interaction of all the particles in a cell with all the
+ * other ones.
+ *
  * This function switches between the full potential and the truncated one
  * depending on needs.
  *
