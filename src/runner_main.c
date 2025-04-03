@@ -357,8 +357,8 @@ void *runner_main(void *data) {
             pot_j[pack_count*max_cell_size + i] = cj_cache->pot[i];
             active_i[pack_count*max_cell_size + i] = ci_cache->active[i];
             active_j[pack_count*max_cell_size + i] = cj_cache->active[i];
-            CoM_i[pack_count*max_cell_size + i] = ci_cache->active[i];
-            CoM_j[pack_count*max_cell_size + i] = cj_cache->active[i];
+            //CoM_i[pack_count*max_cell_size + i] = ci_cache->active[i];
+            //CoM_j[pack_count*max_cell_size + i] = cj_cache->active[i];
             //add two arrays for each particle to idenify where cj starts and ends
             }
             

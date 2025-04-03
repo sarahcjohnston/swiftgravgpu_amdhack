@@ -408,10 +408,10 @@ __device__ void doself_grav_pp_full(int* active, float *h_i, float *mass_i_arr, 
     }
 
     /* Store everything back into values */ //THIS FEELS DODGY AND WRONG BUT IT WORKS?
-    a_x_i[pid] += atomicAdd(&a_x_i[pid], a_x*active[pid]*ci_active*abs(periodic-1) + a_x*active[pid]*ci_active*periodic*max_r_decision);
-    a_y_i[pid] += atomicAdd(&a_y_i[pid], a_y*active[pid]*ci_active*abs(periodic-1) + a_y*active[pid]*ci_active*periodic*max_r_decision);
-    a_z_i[pid] += atomicAdd(&a_z_i[pid], a_z*active[pid]*ci_active*abs(periodic-1) + a_z*active[pid]*ci_active*periodic*max_r_decision);
-    pot_i[pid] += atomicAdd(&pot_i[pid], pot*active[pid]*ci_active*abs(periodic-1) + pot*active[pid]*ci_active*periodic*max_r_decision);
+    atomicAdd(&a_x_i[pid], a_x);//a_x*active[pid]*ci_active*abs(periodic-1) + a_x*active[pid]*ci_active*periodic*max_r_decision);
+    atomicAdd(&a_y_i[pid], a_y);//*active[pid]*ci_active*abs(periodic-1) + a_y*active[pid]*ci_active*periodic*max_r_decision);
+    atomicAdd(&a_z_i[pid], a_z);//*active[pid]*ci_active*abs(periodic-1) + a_z*active[pid]*ci_active*periodic*max_r_decision);
+    atomicAdd(&pot_i[pid], pot);//*active[pid]*ci_active*abs(periodic-1) + pot*active[pid]*ci_active*periodic*max_r_decision);
   }
 }
 
@@ -470,9 +470,9 @@ __device__ void doself_grav_pp_truncated(int* active, float *h_i, float *mass_i_
     }
 
     /* Store everything back into values */ //THIS FEELS DODGY AND WRONG BUT IT WORKS?
-    a_x_i[pid] += atomicAdd(&a_x_i[pid], a_x*active[pid]*ci_active*periodic*abs(max_r_decision-1));
-    a_y_i[pid] += atomicAdd(&a_y_i[pid], a_y*active[pid]*ci_active*periodic*abs(max_r_decision-1));
-    a_z_i[pid] += atomicAdd(&a_z_i[pid], a_z*active[pid]*ci_active*periodic*abs(max_r_decision-1));
-    pot_i[pid] += atomicAdd(&pot_i[pid], pot*active[pid]*ci_active*periodic*abs(max_r_decision-1));
+    atomicAdd(&a_x_i[pid], a_x);//a_x*active[pid]*ci_active*periodic*abs(max_r_decision-1));
+    atomicAdd(&a_y_i[pid], a_y);//*active[pid]*ci_active*periodic*abs(max_r_decision-1));
+    atomicAdd(&a_z_i[pid], a_z);//*active[pid]*ci_active*periodic*abs(max_r_decision-1));
+    atomicAdd(&pot_i[pid], pot);//*active[pid]*ci_active*periodic*abs(max_r_decision-1));
   }
 }
