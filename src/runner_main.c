@@ -47,7 +47,8 @@ extern "C" {
 #include "engine.h"
 #include "feedback.h"
 #include "gpu_params.h"
-#include "gpu_malloc.h"
+// #include "gpu_malloc.h"
+#include "cuda_utils.h"
 #include "parser.h"
 #include "runner_doiact_sinks.h"
 #include "scheduler.h"
@@ -141,109 +142,7 @@ extern "C" {
 #include "runner_doiact_hydro.h"
 #include "runner_doiact_undef.h"
 
-struct device_host_pair_float {
-  float *device;
-  float *host;
-  int size;
-};
-
-/**
- * @brief 
- *
- * @param number_of_items Number of items to be allocated. Not number of bytes.
- */
-struct device_host_pair_float init_device_host_pair_float(int number_of_items) {
-  struct device_host_pair_float result = {
-    .device = NULL,
-    .host = NULL,
-    .size = number_of_items,
-  };
-
-	if(cudaMallocHost((void **)&result.host, number_of_items * sizeof(float)) != cudaSuccess) {
-    error("Failed to allocate host memory");
-  }
-
-	if(cudaMalloc((void **)&result.device, number_of_items * sizeof(float)) != cudaSuccess) {
-    error("Failed to allocate device memory");
-  }
-
-  return result;
-}
-
-cudaError_t host_to_device_float(const struct device_host_pair_float *in, bool is_async, cudaStream_t stream) {
-  if(is_async) {
-    return cudaMemcpyAsync(in->device, in->host, in->size * sizeof(float), cudaMemcpyHostToDevice, stream);
-  } else {
-    return cudaMemcpy(in->device, in->host, in->size * sizeof(float), cudaMemcpyHostToDevice);
-  }
-}
-
-cudaError_t device_to_host_float(const struct device_host_pair_float *in, bool is_async, cudaStream_t stream) {
-  if(is_async) {
-    return cudaMemcpyAsync(in->host, in->device, in->size * sizeof(float), cudaMemcpyDeviceToHost, stream);
-  } else {
-    return cudaMemcpy(in->host, in->device, in->size * sizeof(float), cudaMemcpyDeviceToHost);
-  }
-}
-
-void free_device_host_pair_float(struct device_host_pair_float *in) {
-  free(in->host);
-  in->host = NULL;
-  cudaFree(in->device);
-  in->device = NULL;
-}
-
-struct device_host_pair_int {
-  int *device;
-  int *host;
-  int size;
-};
-
-/**
- * @brief 
- *
- * @param number_of_items Number of items to be allocated. Not number of bytes.
- */
-struct device_host_pair_int init_device_host_pair_int(int number_of_items) {
-  struct device_host_pair_int result = {
-    .device = NULL,
-    .host = NULL,
-    .size = number_of_items,
-  };
-
-	if(cudaMallocHost((void **)&result.host, number_of_items * sizeof(int)) != cudaSuccess) {
-    error("Failed to allocate host memory");
-  }
-
-	if(cudaMalloc((void **)&result.device, number_of_items * sizeof(int)) != cudaSuccess) {
-    error("Failed to allocate device memory");
-  }
-
-  return result;
-}
-
-cudaError_t host_to_device_int(const struct device_host_pair_int *in, bool is_async, cudaStream_t stream) {
-  if(is_async) {
-    return cudaMemcpyAsync(in->device, in->host, in->size * sizeof(int), cudaMemcpyHostToDevice, stream);
-  } else {
-    return cudaMemcpy(in->device, in->host, in->size * sizeof(int), cudaMemcpyHostToDevice);
-  }
-}
-
-cudaError_t device_to_host_int(const struct device_host_pair_int *in, bool is_async, cudaStream_t stream) {
-  if(is_async) {
-    return cudaMemcpyAsync(in->host, in->device, in->size * sizeof(int), cudaMemcpyDeviceToHost, stream);
-  } else {
-    return cudaMemcpy(in->host, in->device, in->size * sizeof(int), cudaMemcpyDeviceToHost);
-  }
-}
-
-void free_device_host_pair_int(struct device_host_pair_int *in) {
-  free(in->host);
-  in->host = NULL;
-  cudaFree(in->device);
-  in->device = NULL;
-}
+extern int space_splitsize;
 
 extern void self_pp_offload(int periodic, float rmax_i, double min_trunc, int* active_i, const float *x_i, const float *y_i, const float *z_i, float *pot_i, float *a_x_i, float *a_y_i, float *a_z_i, float *mass_i_arr, const float *r_s_inv, float *h_i, const int *gcount_i, const int *gcount_padded_i, int ci_active, float *d_h_i, float *d_mass_i, float *d_x_i, float *d_y_i, float *d_z_i, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_pot_i, int *d_active_i);
 /**
@@ -257,8 +156,7 @@ void *runner_main(void *data) {
   struct engine *e = r->e;
   struct scheduler *sched = &e->sched;
   
-  //TODO: automate method for getting max cell size value
-  int max_cell_size = 8000; //parser_get_opt_param_int(params, "Scheduler:cell_split_size", space_splitsize);
+  int max_cell_size = space_splitsize;
 
   /* Main loop. */
   while (1) {
@@ -301,9 +199,10 @@ void *runner_main(void *data) {
 	
     int pack_count = 0;
     
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess) 
-    	printf("Error1: %s\n", cudaGetErrorString(err));
+    {
+      cudaError_t err = cudaGetLastError();
+      if (err != cudaSuccess) printf("Error1: %s\n", cudaGetErrorString(err));
+    }
 
     /* Loop while there are tasks... */
     while (1) {
@@ -368,7 +267,7 @@ void *runner_main(void *data) {
             struct gravity_cache *const cj_cache = &r->cj_gravity_cache;
   
             //put values into long arrays
-            for (int i =0; i < max_cell_size; i++){ //change to gcount for cell
+            for (int i =0; i < max_cell_size; i++) { //change to gcount for cell
               h_i.host[pack_count*max_cell_size + i] = ci_cache->epsilon[i];
               h_j.host[pack_count*max_cell_size + i] = cj_cache->epsilon[i];
               mass_i.host[pack_count*max_cell_size + i] = ci_cache->m[i];
@@ -389,8 +288,8 @@ void *runner_main(void *data) {
               pot_j.host[pack_count*max_cell_size + i] = cj_cache->pot[i];
               active_i.host[pack_count*max_cell_size + i] = ci_cache->active[i];
               active_j.host[pack_count*max_cell_size + i] = cj_cache->active[i];
-              // CoM_i.host[pack_count*max_cell_size + i] = ci_cache->active[i]; // TODO 
-              // CoM_j.host[pack_count*max_cell_size + i] = cj_cache->active[i];
+              // CoM_i.host[pack_count*3 + i] = ci_cache->active[i]; // TODO 
+              // CoM_j.host[pack_count*3 + i] = cj_cache->active[i];
               //add two arrays for each particle to idenify where cj starts and ends
             }
             
@@ -398,12 +297,12 @@ void *runner_main(void *data) {
             //Here we need to unlock the cell(s)
             //if arrays have been filled
             if (pack_count == ncells) {
-            	printf("Outbound! GPU: %f CPU: %f \n", a_x_i.host[(pack_count-1)*max_cell_size+1], ci_cache->a_x[1]);
+            	// printf("Outbound! GPU: %f CPU: %f \n", a_x_i.host[(pack_count-1)*max_cell_size+1], ci_cache->a_x[1]);
 
               const bool is_async = true;
               const cudaStream_t stream = NULL;
 
-              if(host_to_device_float(&h_i, is_async, stream) != cudaSuccess) error("Could not transfer host to device"); // GIRLY do this to every function
+              host_to_device_float(&h_i, is_async, stream);
               host_to_device_float(&h_j, is_async, stream);
               host_to_device_float(&mass_i, is_async, stream);
               host_to_device_float(&mass_j, is_async, stream);
@@ -451,7 +350,7 @@ void *runner_main(void *data) {
                 if (err != cudaSuccess) printf("Error4: %s\n", cudaGetErrorString(err));
               }
               
-              printf("Inbound! GPU: %f \n", a_x_i.host[(pack_count-1)*max_cell_size+1]);
+              // printf("Inbound! GPU: %f \n", a_x_i.host[(pack_count-1)*max_cell_size+1]);
               //for(int pack=0; pack<pack_count; pack++){
                 //cii = cell_list[pack];
                 //same for cjj
@@ -513,44 +412,9 @@ void *runner_main(void *data) {
             runner_dopair2_branch_force(r, ci, cj);
           else if (t->subtype == task_subtype_limiter)
             runner_dopair1_branch_limiter(r, ci, cj);
-          else if (t->subtype == task_subtype_grav){
-            /*//pseudo memcpy function
-            //make long arrays with all the values
-            struct gravity_cache *const ci_cache = &r->ci_gravity_cache;
-  	    struct gravity_cache *const cj_cache = &r->cj_gravity_cache;
-  
-            h_i[pack_count*max_cell_size] = ci_cache->epsilon;
-            h_j[pack_count*max_cell_size] = cj_cache->epsilon;
-            mass_i[pack_count*max_cell_size] = ci_cache->m;
-            mass_j[pack_count*max_cell_size] = cj_cache->m;
-            x_i[pack_count*max_cell_size] = ci_cache->x;
-            x_j[pack_count*max_cell_size] = cj_cache->x;
-            y_i[pack_count*max_cell_size] = ci_cache->y;
-            y_j[pack_count*max_cell_size] = cj_cache->y;
-            z_i[pack_count*max_cell_size] = ci_cache->z;
-            z_j[pack_count*max_cell_size] = cj_cache->z;
-            a_x_i[pack_count*max_cell_size] = ci_cache->a_x;
-            a_x_j[pack_count*max_cell_size] = cj_cache->a_x;
-            a_y_i[pack_count*max_cell_size] = ci_cache->a_y;
-            a_y_j[pack_count*max_cell_size] = cj_cache->a_y;
-            a_z_i[pack_count*max_cell_size] = ci_cache->a_z;
-            a_z_j[pack_count*max_cell_size] = cj_cache->a_z;
-            pot_i[pack_count*max_cell_size] = ci_cache->pot;
-            pot_j[pack_count*max_cell_size] = cj_cache->pot;
-            active_i[pack_count*max_cell_size] = ci_cache->active;
-            active_j[pack_count*max_cell_size] = cj_cache->active;
-            CoM_i[pack_count*max_cell_size] = ci_cache->active;
-            CoM_j[pack_count*max_cell_size] = cj_cache->active;
-            
-            pack_count += 1;
-            
-            if (pack_count == ncells){
-            	
-            
-            //need to memcpy final values to device when read
-	    */
-	
-            runner_dopair_recursive_grav(r, ci, cj, 1, h_i.device, h_j.device, mass_i.device, mass_j.device, x_i.device, x_j.device, y_i.device, y_j.device, z_i.device, z_j.device, a_x_i.device, a_y_i.device, a_z_i.device, a_x_j.device, a_y_j.device, a_z_j.device, pot_i.device, pot_j.device, active_i.device, active_j.device, CoM_i.device, CoM_j.device);}
+          else if (t->subtype == task_subtype_grav) {
+            runner_dopair_recursive_grav(r, ci, cj, 1, h_i.device, h_j.device, mass_i.device, mass_j.device, x_i.device, x_j.device, y_i.device, y_j.device, z_i.device, z_j.device, a_x_i.device, a_y_i.device, a_z_i.device, a_x_j.device, a_y_j.device, a_z_j.device, pot_i.device, pot_j.device, active_i.device, active_j.device, CoM_i.device, CoM_j.device);
+          }
           else if (t->subtype == task_subtype_stars_density)
             runner_dopair_branch_stars_density(r, ci, cj);
 #ifdef EXTRA_STAR_LOOPS
