@@ -141,6 +141,110 @@ extern "C" {
 #include "runner_doiact_hydro.h"
 #include "runner_doiact_undef.h"
 
+struct device_host_pair_float {
+  float *device;
+  float *host;
+  int size;
+};
+
+/**
+ * @brief 
+ *
+ * @param number_of_items Number of items to be allocated. Not number of bytes.
+ */
+struct device_host_pair_float init_device_host_pair_float(int number_of_items) {
+  struct device_host_pair_float result = {
+    .device = NULL,
+    .host = NULL,
+    .size = number_of_items,
+  };
+
+	if(cudaMallocHost((void **)&result.host, number_of_items * sizeof(float)) != cudaSuccess) {
+    error("Failed to allocate host memory");
+  }
+
+	if(cudaMalloc((void **)&result.device, number_of_items * sizeof(float)) != cudaSuccess) {
+    error("Failed to allocate device memory");
+  }
+
+  return result;
+}
+
+cudaError_t host_to_device_float(const struct device_host_pair_float *in, bool is_async, cudaStream_t stream) {
+  if(is_async) {
+    return cudaMemcpyAsync(in->device, in->host, in->size * sizeof(float), cudaMemcpyHostToDevice, stream);
+  } else {
+    return cudaMemcpy(in->device, in->host, in->size * sizeof(float), cudaMemcpyHostToDevice);
+  }
+}
+
+cudaError_t device_to_host_float(const struct device_host_pair_float *in, bool is_async, cudaStream_t stream) {
+  if(is_async) {
+    return cudaMemcpyAsync(in->host, in->device, in->size * sizeof(float), cudaMemcpyDeviceToHost, stream);
+  } else {
+    return cudaMemcpy(in->host, in->device, in->size * sizeof(float), cudaMemcpyDeviceToHost);
+  }
+}
+
+void free_device_host_pair_float(struct device_host_pair_float *in) {
+  free(in->host);
+  in->host = NULL;
+  cudaFree(in->device);
+  in->device = NULL;
+}
+
+struct device_host_pair_int {
+  int *device;
+  int *host;
+  int size;
+};
+
+/**
+ * @brief 
+ *
+ * @param number_of_items Number of items to be allocated. Not number of bytes.
+ */
+struct device_host_pair_int init_device_host_pair_int(int number_of_items) {
+  struct device_host_pair_int result = {
+    .device = NULL,
+    .host = NULL,
+    .size = number_of_items,
+  };
+
+	if(cudaMallocHost((void **)&result.host, number_of_items * sizeof(int)) != cudaSuccess) {
+    error("Failed to allocate host memory");
+  }
+
+	if(cudaMalloc((void **)&result.device, number_of_items * sizeof(int)) != cudaSuccess) {
+    error("Failed to allocate device memory");
+  }
+
+  return result;
+}
+
+cudaError_t host_to_device_int(const struct device_host_pair_int *in, bool is_async, cudaStream_t stream) {
+  if(is_async) {
+    return cudaMemcpyAsync(in->device, in->host, in->size * sizeof(int), cudaMemcpyHostToDevice, stream);
+  } else {
+    return cudaMemcpy(in->device, in->host, in->size * sizeof(int), cudaMemcpyHostToDevice);
+  }
+}
+
+cudaError_t device_to_host_int(const struct device_host_pair_int *in, bool is_async, cudaStream_t stream) {
+  if(is_async) {
+    return cudaMemcpyAsync(in->host, in->device, in->size * sizeof(int), cudaMemcpyDeviceToHost, stream);
+  } else {
+    return cudaMemcpy(in->host, in->device, in->size * sizeof(int), cudaMemcpyDeviceToHost);
+  }
+}
+
+void free_device_host_pair_int(struct device_host_pair_int *in) {
+  free(in->host);
+  in->host = NULL;
+  cudaFree(in->device);
+  in->device = NULL;
+}
+
 extern void self_pp_offload(int periodic, float rmax_i, double min_trunc, int* active_i, const float *x_i, const float *y_i, const float *z_i, float *pot_i, float *a_x_i, float *a_y_i, float *a_z_i, float *mass_i_arr, const float *r_s_inv, float *h_i, const int *gcount_i, const int *gcount_padded_i, int ci_active, float *d_h_i, float *d_mass_i, float *d_x_i, float *d_y_i, float *d_z_i, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_pot_i, int *d_active_i);
 /**
  * @brief The #runner main thread routine.
@@ -169,105 +273,33 @@ void *runner_main(void *data) {
     struct task *t = NULL;
     struct task *prev = NULL;
     
+    //define number of cells to transfer
+    int ncells = 1; //THIS VERSION ONLY WORKS FOR ONE CELL (which does somewhat negate the purpose but its getting there...)
 
-	/* floats needed for GPU calculations */
-	float *h_i;
-	float *h_j;
-	float *mass_i;
-	float *mass_j;
-	float *x_i;
-	float *x_j;
-	float *y_i;
-	float *y_j;
-	float *z_i;
-	float *z_j;
-	float *a_x_i;
-	float *a_y_i;
-	float *a_z_i;
-	float *a_x_j;
-	float *a_y_j;
-	float *a_z_j;
-	float *pot_i;
-	float *pot_j;
-	int *active_i;
-	int *active_j;
-	float *CoM_i;
-	float *CoM_j;
-	float *d_h_i;
-	float *d_h_j;
-	float *d_mass_i;
-	float *d_mass_j;
-	float *d_x_i;
-	float *d_x_j;
-	float *d_y_i;
-	float *d_y_j;
-	float *d_z_i;
-	float *d_z_j;
-	float *d_a_x_i;
-	float *d_a_y_i;
-	float *d_a_z_i;
-	float *d_a_x_j;
-	float *d_a_y_j;
-	float *d_a_z_j;
-	float *d_pot_i;
-	float *d_pot_j;
-	int *d_active_i;
-	int *d_active_j;
-	float *d_CoM_i;
-	float *d_CoM_j;
+    struct device_host_pair_float h_i = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float h_j = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float mass_i = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float mass_j = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float x_i = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float x_j = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float y_i = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float y_j = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float z_i = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float z_j = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_x_i = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_y_i = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_z_i = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_x_j = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_y_j = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_z_j = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float pot_i = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float pot_j = init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_int active_i = init_device_host_pair_int(ncells * max_cell_size);
+    struct device_host_pair_int active_j = init_device_host_pair_int(ncells * max_cell_size);
+    struct device_host_pair_float CoM_i = init_device_host_pair_float(3 * max_cell_size);
+    struct device_host_pair_float CoM_j = init_device_host_pair_float(3 * max_cell_size);
 	
-	//define number of cells to transfer
-	int ncells = 1; //THIS VERSION ONLY WORKS FOR ONE CELL (which does somewhat negate the purpose but its getting there...)
-
-	//allocate memory on host
-	cudaMallocHost((void **)&h_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&h_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&mass_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&mass_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&x_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&x_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&y_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&y_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&z_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&z_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&a_x_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&a_y_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&a_z_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&a_x_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&a_y_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&a_z_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&pot_i, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&pot_j, ncells * max_cell_size * sizeof(float));
-	cudaMallocHost((void **)&active_i, ncells * max_cell_size * sizeof(int));
-	cudaMallocHost((void **)&active_j, ncells * max_cell_size * sizeof(int));
-	cudaMallocHost((void **)&CoM_i, ncells * 3 * sizeof(float));
-	cudaMallocHost((void **)&CoM_j, ncells * 3 * sizeof(float));
-
-	//allocate memory on device
-	cudaMalloc((void **)&d_h_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_h_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_mass_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_mass_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_x_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_x_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_y_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_y_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_z_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_z_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_a_x_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_a_y_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_a_z_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_a_x_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_a_y_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_a_z_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_pot_i, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_pot_j, ncells * max_cell_size * sizeof(float));
-	cudaMalloc((void **)&d_active_i, ncells * max_cell_size * sizeof(int));
-	cudaMalloc((void **)&d_active_j, ncells * max_cell_size * sizeof(int));
-	cudaMalloc((void **)&d_CoM_i, ncells * 3 * sizeof(float));
-	cudaMalloc((void **)&d_CoM_j, ncells * 3 * sizeof(float));
-	
-	int pack_count = 0;
+    int pack_count = 0;
     
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) 
@@ -333,107 +365,106 @@ void *runner_main(void *data) {
           else if (t->subtype == task_subtype_grav){
             //make long arrays with all the values
             struct gravity_cache *const ci_cache = &r->ci_gravity_cache;
-  	    struct gravity_cache *const cj_cache = &r->cj_gravity_cache;
+            struct gravity_cache *const cj_cache = &r->cj_gravity_cache;
   
-  	    //put values into long arrays
-  	    for (int i =0; i < max_cell_size; i++){ //change to gcount for cell
-            h_i[pack_count*max_cell_size + i] = ci_cache->epsilon[i];
-            h_j[pack_count*max_cell_size + i] = cj_cache->epsilon[i];
-            mass_i[pack_count*max_cell_size + i] = ci_cache->m[i];
-            mass_j[pack_count*max_cell_size + i] = cj_cache->m[i];
-            x_i[pack_count*max_cell_size + i] = ci_cache->x[i];
-            x_j[pack_count*max_cell_size + i] = cj_cache->x[i];
-            y_i[pack_count*max_cell_size + i] = ci_cache->y[i];
-            y_j[pack_count*max_cell_size + i] = cj_cache->y[i];
-            z_i[pack_count*max_cell_size + i] = ci_cache->z[i];
-            z_j[pack_count*max_cell_size + i] = cj_cache->z[i];
-            a_x_i[pack_count*max_cell_size + i] = ci_cache->a_x[i];
-            a_x_j[pack_count*max_cell_size + i] = cj_cache->a_x[i];
-            a_y_i[pack_count*max_cell_size + i] = ci_cache->a_y[i];
-            a_y_j[pack_count*max_cell_size + i] = cj_cache->a_y[i];
-            a_z_i[pack_count*max_cell_size + i] = ci_cache->a_z[i];
-            a_z_j[pack_count*max_cell_size + i] = cj_cache->a_z[i];
-            pot_i[pack_count*max_cell_size + i] = ci_cache->pot[i];
-            pot_j[pack_count*max_cell_size + i] = cj_cache->pot[i];
-            active_i[pack_count*max_cell_size + i] = ci_cache->active[i];
-            active_j[pack_count*max_cell_size + i] = cj_cache->active[i];
-            CoM_i[pack_count*max_cell_size + i] = ci_cache->active[i];
-            CoM_j[pack_count*max_cell_size + i] = cj_cache->active[i];
-            //add two arrays for each particle to idenify where cj starts and ends
+            //put values into long arrays
+            for (int i =0; i < max_cell_size; i++){ //change to gcount for cell
+              h_i.host[pack_count*max_cell_size + i] = ci_cache->epsilon[i];
+              h_j.host[pack_count*max_cell_size + i] = cj_cache->epsilon[i];
+              mass_i.host[pack_count*max_cell_size + i] = ci_cache->m[i];
+              mass_j.host[pack_count*max_cell_size + i] = cj_cache->m[i];
+              x_i.host[pack_count*max_cell_size + i] = ci_cache->x[i];
+              x_j.host[pack_count*max_cell_size + i] = cj_cache->x[i];
+              y_i.host[pack_count*max_cell_size + i] = ci_cache->y[i];
+              y_j.host[pack_count*max_cell_size + i] = cj_cache->y[i];
+              z_i.host[pack_count*max_cell_size + i] = ci_cache->z[i];
+              z_j.host[pack_count*max_cell_size + i] = cj_cache->z[i];
+              a_x_i.host[pack_count*max_cell_size + i] = ci_cache->a_x[i];
+              a_x_j.host[pack_count*max_cell_size + i] = cj_cache->a_x[i];
+              a_y_i.host[pack_count*max_cell_size + i] = ci_cache->a_y[i];
+              a_y_j.host[pack_count*max_cell_size + i] = cj_cache->a_y[i];
+              a_z_i.host[pack_count*max_cell_size + i] = ci_cache->a_z[i];
+              a_z_j.host[pack_count*max_cell_size + i] = cj_cache->a_z[i];
+              pot_i.host[pack_count*max_cell_size + i] = ci_cache->pot[i];
+              pot_j.host[pack_count*max_cell_size + i] = cj_cache->pot[i];
+              active_i.host[pack_count*max_cell_size + i] = ci_cache->active[i];
+              active_j.host[pack_count*max_cell_size + i] = cj_cache->active[i];
+              // CoM_i.host[pack_count*max_cell_size + i] = ci_cache->active[i]; // TODO 
+              // CoM_j.host[pack_count*max_cell_size + i] = cj_cache->active[i];
+              //add two arrays for each particle to idenify where cj starts and ends
             }
             
             pack_count += 1;
             //Here we need to unlock the cell(s)
             //if arrays have been filled
-            if (pack_count == ncells){
-              
-            	printf("Outbound! GPU: %f CPU: %f \n", a_x_i[(pack_count-1)*max_cell_size+1], ci_cache->a_x[1]);
-            	
-            	//now copy all the arrays to the device
-            	cudaMemcpyAsync(d_h_i, h_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-            	cudaMemcpyAsync(d_h_j, h_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_mass_i, mass_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_mass_j, mass_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_x_i, x_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_y_i, y_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_z_i, z_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_x_j, x_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_y_j, y_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_z_j, z_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_a_x_i, a_x_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_a_y_i, a_y_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_a_z_i, a_z_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_a_x_j, a_x_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_a_y_j, a_y_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_a_z_j, a_z_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_pot_i, pot_i, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_pot_j, pot_j, ncells * max_cell_size * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_active_i, active_i, ncells * max_cell_size * sizeof(int), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_active_j, active_j, ncells * max_cell_size * sizeof(int), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_CoM_i, CoM_i, ncells * 3 * sizeof(float), cudaMemcpyHostToDevice, 0);
-		cudaMemcpyAsync(d_CoM_j, CoM_j, ncells * 3 * sizeof(float), cudaMemcpyHostToDevice, 0);
+            if (pack_count == ncells) {
+            	printf("Outbound! GPU: %f CPU: %f \n", a_x_i.host[(pack_count-1)*max_cell_size+1], ci_cache->a_x[1]);
+
+              const bool is_async = true;
+              const cudaStream_t stream = NULL;
+
+              if(host_to_device_float(&h_i, is_async, stream) != cudaSuccess) error("Could not transfer host to device"); // GIRLY do this to every function
+              host_to_device_float(&h_j, is_async, stream);
+              host_to_device_float(&mass_i, is_async, stream);
+              host_to_device_float(&mass_j, is_async, stream);
+              host_to_device_float(&x_i, is_async, stream);
+              host_to_device_float(&x_j, is_async, stream);
+              host_to_device_float(&y_i, is_async, stream);
+              host_to_device_float(&y_j, is_async, stream);
+              host_to_device_float(&z_i, is_async, stream);
+              host_to_device_float(&z_j, is_async, stream);
+              host_to_device_float(&a_x_i, is_async, stream);
+              host_to_device_float(&a_x_j, is_async, stream);
+              host_to_device_float(&a_y_i, is_async, stream);
+              host_to_device_float(&a_y_j, is_async, stream);
+              host_to_device_float(&a_z_i, is_async, stream);
+              host_to_device_float(&a_z_j, is_async, stream);
+              host_to_device_float(&pot_i, is_async, stream);
+              host_to_device_float(&pot_j, is_async, stream);
+              host_to_device_int(&active_i, is_async, stream);
+              host_to_device_int(&active_j, is_async, stream);
+              host_to_device_float(&CoM_i, is_async, stream);
+              host_to_device_float(&CoM_j, is_async, stream);
 		
-		cudaError_t err = cudaGetLastError();
-    		if (err != cudaSuccess) 
-    			printf("Error2: %s\n", cudaGetErrorString(err));
+              //cudaDeviceSynchronize();
     			
-    		//cudaDeviceSynchronize();
-    			
-    		runner_doself_recursive_grav(r, ci, 1, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
+              runner_doself_recursive_grav(r, ci, 1, h_i.device, h_j.device, mass_i.device, mass_j.device, x_i.device, x_j.device, y_i.device, y_j.device, z_i.device, z_j.device, a_x_i.device, a_y_i.device, a_z_i.device, a_x_j.device, a_y_j.device, a_z_j.device, pot_i.device, pot_j.device, active_i.device, active_j.device, CoM_i.device, CoM_j.device);
     		
-    		//cudaDeviceSynchronize();
+              //cudaDeviceSynchronize();
 		
-		a_x_i[1] = 0.f;
-		printf("Reset to 0: %f \n", a_x_i[(pack_count-1)*max_cell_size+1]);
-	
-		cudaMemcpyAsync(a_x_i, d_a_x_i, ncells * max_cell_size * sizeof(float), cudaMemcpyDeviceToHost, 0);
-		cudaMemcpyAsync(a_y_i, d_a_y_i, ncells * max_cell_size * sizeof(float), cudaMemcpyDeviceToHost, 0);
-		cudaMemcpyAsync(a_z_i, d_a_z_i, ncells * max_cell_size * sizeof(float), cudaMemcpyDeviceToHost, 0);
-		cudaMemcpyAsync(a_x_j, d_a_x_j, ncells * max_cell_size * sizeof(float), cudaMemcpyDeviceToHost, 0);
-		cudaMemcpyAsync(a_y_j, d_a_y_j, ncells * max_cell_size * sizeof(float), cudaMemcpyDeviceToHost, 0);
-		cudaMemcpyAsync(a_z_j, d_a_z_j, ncells * max_cell_size * sizeof(float), cudaMemcpyDeviceToHost, 0);
-		cudaMemcpyAsync(pot_i, d_pot_i, ncells * max_cell_size * sizeof(float), cudaMemcpyDeviceToHost, 0);
-		cudaMemcpyAsync(pot_j, d_pot_j, ncells * max_cell_size * sizeof(float), cudaMemcpyDeviceToHost, 0);
+              // a_x_i[1] = 0.f;
+              // printf("Reset to 0: %f \n", a_x_i[(pack_count-1)*max_cell_size+1]);
+
+              device_to_host_float(&a_x_i, is_async, stream);
+              device_to_host_float(&a_y_i, is_async, stream);
+              device_to_host_float(&a_z_i, is_async, stream);
+              device_to_host_float(&pot_i, is_async, stream);
+
+              device_to_host_float(&a_x_j, is_async, stream);
+              device_to_host_float(&a_y_j, is_async, stream);
+              device_to_host_float(&a_z_j, is_async, stream);
+              device_to_host_float(&pot_j, is_async, stream);
 		
-		cudaDeviceSynchronize();
-		cudaError_t err3 = cudaGetLastError();
-    		if (err != cudaSuccess) 
-    			printf("Error4: %s\n", cudaGetErrorString(err3));
-		
-		printf("Inbound! GPU: %f \n", a_x_i[(pack_count-1)*max_cell_size+1]);
-		//for(int pack=0; pack<pack_count; pack++){
-		  //cii = cell_list[pack];
-		  //same for cjj
-		  //while (cell_locktree(cii);
-		  //while (cell_locktree(cjj);)
-		  //UNPACK
-		  //unlock cells i and j
-		  //enqueue_dependencies(); //Line 3296 in Abou repo
-		///}
-		//reset counter for next pack
+              cudaDeviceSynchronize();
+              {
+                cudaError_t err = cudaGetLastError();
+                if (err != cudaSuccess) printf("Error4: %s\n", cudaGetErrorString(err));
+              }
+              
+              printf("Inbound! GPU: %f \n", a_x_i.host[(pack_count-1)*max_cell_size+1]);
+              //for(int pack=0; pack<pack_count; pack++){
+                //cii = cell_list[pack];
+                //same for cjj
+                //while (cell_locktree(cii);
+                //while (cell_locktree(cjj);)
+                //UNPACK
+                //unlock cells i and j
+                //enqueue_dependencies(); //Line 3296 in Abou repo
+              ///}
+              //reset counter for next pack
             	pack_count = 0;
             	}
-            	}
+            }
           else if (t->subtype == task_subtype_external_grav)
             runner_do_grav_external(r, ci, 1);
           else if (t->subtype == task_subtype_stars_density)
@@ -519,7 +550,7 @@ void *runner_main(void *data) {
             //need to memcpy final values to device when read
 	    */
 	
-            runner_dopair_recursive_grav(r, ci, cj, 1, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);}
+            runner_dopair_recursive_grav(r, ci, cj, 1, h_i.device, h_j.device, mass_i.device, mass_j.device, x_i.device, x_j.device, y_i.device, y_j.device, z_i.device, z_j.device, a_x_i.device, a_y_i.device, a_z_i.device, a_x_j.device, a_y_j.device, a_z_j.device, pot_i.device, pot_j.device, active_i.device, active_j.device, CoM_i.device, CoM_j.device);}
           else if (t->subtype == task_subtype_stars_density)
             runner_dopair_branch_stars_density(r, ci, cj);
 #ifdef EXTRA_STAR_LOOPS
@@ -888,29 +919,31 @@ void *runner_main(void *data) {
       t = scheduler_done(sched, t); //This will unlock my deps and unleash hell!
       //}
     } /* main loop. */
-  cudaFree(d_h_i);
-  cudaFree(d_h_j);
-  cudaFree(d_mass_i);
-  cudaFree(d_mass_j);
-  cudaFree(d_x_i);
-  cudaFree(d_x_j);
-  cudaFree(d_y_i);
-  cudaFree(d_y_j);
-  cudaFree(d_z_i);
-  cudaFree(d_z_j);
-  cudaFree(d_a_x_i);
-  cudaFree(d_a_y_i);
-  cudaFree(d_a_z_i);
-  cudaFree(d_a_x_j);
-  cudaFree(d_a_y_j);
-  cudaFree(d_a_z_j);
-  cudaFree(d_pot_i);
-  cudaFree(d_pot_j);
-  cudaFree(d_active_i);
-  cudaFree(d_active_j);
-  cudaFree(d_CoM_i);
-  cudaFree(d_CoM_j);
+
+    free_device_host_pair_float(&h_i);
+    free_device_host_pair_float(&h_j);
+    free_device_host_pair_float(&mass_i);
+    free_device_host_pair_float(&mass_j);
+    free_device_host_pair_float(&x_i);
+    free_device_host_pair_float(&x_j);
+    free_device_host_pair_float(&y_i);
+    free_device_host_pair_float(&y_j);
+    free_device_host_pair_float(&z_i);
+    free_device_host_pair_float(&z_j);
+    free_device_host_pair_float(&a_x_i);
+    free_device_host_pair_float(&a_y_i);
+    free_device_host_pair_float(&a_z_i);
+    free_device_host_pair_float(&a_x_j);
+    free_device_host_pair_float(&a_y_j);
+    free_device_host_pair_float(&a_z_j);
+    free_device_host_pair_float(&pot_i);
+    free_device_host_pair_float(&pot_j);
+    free_device_host_pair_int(&active_i);
+    free_device_host_pair_int(&active_j);
+    free_device_host_pair_float(&CoM_i);
+    free_device_host_pair_float(&CoM_j);
   }
+
   /* Be kind, rewind. */
   return NULL;
 }
