@@ -142,8 +142,6 @@ extern "C" {
 #include "runner_doiact_hydro.h"
 #include "runner_doiact_undef.h"
 
-extern int space_splitsize;
-
 extern void self_pp_offload(int periodic, float rmax_i, double min_trunc, int* active_i, const float *x_i, const float *y_i, const float *z_i, float *pot_i, float *a_x_i, float *a_y_i, float *a_z_i, float *mass_i_arr, const float *r_s_inv, float *h_i, const int *gcount_i, const int *gcount_padded_i, int ci_active, float *d_h_i, float *d_mass_i, float *d_x_i, float *d_y_i, float *d_z_i, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_pot_i, int *d_active_i);
 /**
  * @brief The #runner main thread routine.
@@ -267,7 +265,7 @@ void *runner_main(void *data) {
             struct gravity_cache *const cj_cache = &r->cj_gravity_cache;
   
             //put values into long arrays
-            for (int i =0; i < max_cell_size; i++) { //change to gcount for cell
+            for (int i =0; i < max_cell_size; i++) {
               h_i.host[pack_count*max_cell_size + i] = ci_cache->epsilon[i];
               h_j.host[pack_count*max_cell_size + i] = cj_cache->epsilon[i];
               mass_i.host[pack_count*max_cell_size + i] = ci_cache->m[i];
