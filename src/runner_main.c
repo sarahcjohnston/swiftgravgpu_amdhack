@@ -224,6 +224,10 @@ void *runner_main(void *data) {
     float *d_CoM_i;
     float *d_CoM_j;
 
+    // define number of cells to transfer
+    int ncells = 1;  // THIS VERSION ONLY WORKS FOR ONE CELL (which does
+                     // somewhat negate the purpose but its getting there...)
+
     // allocate memory on host
     hipMallocHost((void **)&h_i, ncells * max_cell_size * sizeof(float));
     hipMallocHost((void **)&h_j, ncells * max_cell_size * sizeof(float));
@@ -943,28 +947,28 @@ void *runner_main(void *data) {
                          t);  // This will unlock my deps and unleash hell!
       //}
     } /* main loop. */
-    cudaFree(d_h_i);
-    cudaFree(d_h_j);
-    cudaFree(d_mass_i);
-    cudaFree(d_mass_j);
-    cudaFree(d_x_i);
-    cudaFree(d_x_j);
-    cudaFree(d_y_i);
-    cudaFree(d_y_j);
-    cudaFree(d_z_i);
-    cudaFree(d_z_j);
-    cudaFree(d_a_x_i);
-    cudaFree(d_a_y_i);
-    cudaFree(d_a_z_i);
-    cudaFree(d_a_x_j);
-    cudaFree(d_a_y_j);
-    cudaFree(d_a_z_j);
-    cudaFree(d_pot_i);
-    cudaFree(d_pot_j);
-    cudaFree(d_active_i);
-    cudaFree(d_active_j);
-    cudaFree(d_CoM_i);
-    cudaFree(d_CoM_j);
+    hipFree(d_h_i);
+    hipFree(d_h_j);
+    hipFree(d_mass_i);
+    hipFree(d_mass_j);
+    hipFree(d_x_i);
+    hipFree(d_x_j);
+    hipFree(d_y_i);
+    hipFree(d_y_j);
+    hipFree(d_z_i);
+    hipFree(d_z_j);
+    hipFree(d_a_x_i);
+    hipFree(d_a_y_i);
+    hipFree(d_a_z_i);
+    hipFree(d_a_x_j);
+    hipFree(d_a_y_j);
+    hipFree(d_a_z_j);
+    hipFree(d_pot_i);
+    hipFree(d_pot_j);
+    hipFree(d_active_i);
+    hipFree(d_active_j);
+    hipFree(d_CoM_i);
+    hipFree(d_CoM_j);
   }
   /* Be kind, rewind. */
   return NULL;
