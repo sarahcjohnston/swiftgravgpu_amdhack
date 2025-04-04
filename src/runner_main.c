@@ -19,7 +19,6 @@
  *
  ******************************************************************************/
 
-
 #include <unistd.h>
 
 /* Config parameters. */
@@ -142,7 +141,16 @@ extern "C" {
 #include "runner_doiact_hydro.h"
 #include "runner_doiact_undef.h"
 
-extern void self_pp_offload(int periodic, float rmax_i, double min_trunc, int* active_i, const float *x_i, const float *y_i, const float *z_i, float *pot_i, float *a_x_i, float *a_y_i, float *a_z_i, float *mass_i_arr, const float *r_s_inv, float *h_i, const int *gcount_i, const int *gcount_padded_i, int ci_active, float *d_h_i, float *d_mass_i, float *d_x_i, float *d_y_i, float *d_z_i, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_pot_i, int *d_active_i);
+extern void self_pp_offload(int periodic, float rmax_i, double min_trunc,
+                            int *active_i, const float *x_i, const float *y_i,
+                            const float *z_i, float *pot_i, float *a_x_i,
+                            float *a_y_i, float *a_z_i, float *mass_i_arr,
+                            const float *r_s_inv, float *h_i,
+                            const int *gcount_i, const int *gcount_padded_i,
+                            int ci_active, float *d_h_i, float *d_mass_i,
+                            float *d_x_i, float *d_y_i, float *d_z_i,
+                            float *d_a_x_i, float *d_a_y_i, float *d_a_z_i,
+                            float *d_pot_i, int *d_active_i);
 /**
  * @brief The #runner main thread routine.
  *
@@ -153,7 +161,7 @@ void *runner_main(void *data) {
   struct runner *r = (struct runner *)data;
   struct engine *e = r->e;
   struct scheduler *sched = &e->sched;
-  
+
   int max_cell_size = space_splitsize;
 
   /* Main loop. */
@@ -168,35 +176,58 @@ void *runner_main(void *data) {
     /* Re-set the pointer to the previous task, as there is none. */
     struct task *t = NULL;
     struct task *prev = NULL;
-    
-    //define number of cells to transfer
-    int ncells = 1; //THIS VERSION ONLY WORKS FOR ONE CELL (which does somewhat negate the purpose but its getting there...)
 
-    struct device_host_pair_float h_i = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float h_j = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float mass_i = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float mass_j = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float x_i = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float x_j = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float y_i = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float y_j = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float z_i = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float z_j = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float a_x_i = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float a_y_i = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float a_z_i = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float a_x_j = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float a_y_j = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float a_z_j = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float pot_i = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_float pot_j = init_device_host_pair_float(ncells * max_cell_size);
-    struct device_host_pair_int active_i = init_device_host_pair_int(ncells * max_cell_size);
-    struct device_host_pair_int active_j = init_device_host_pair_int(ncells * max_cell_size);
-    struct device_host_pair_float CoM_i = init_device_host_pair_float(3 * max_cell_size);
-    struct device_host_pair_float CoM_j = init_device_host_pair_float(3 * max_cell_size);
-	
+    // define number of cells to transfer
+    int ncells = 1;  // THIS VERSION ONLY WORKS FOR ONE CELL (which does
+                     // somewhat negate the purpose but its getting there...)
+
+    struct device_host_pair_float h_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float h_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float mass_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float mass_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float x_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float x_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float y_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float y_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float z_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float z_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_x_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_y_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_z_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_x_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_y_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_z_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float pot_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float pot_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_int active_i =
+        init_device_host_pair_int(ncells * max_cell_size);
+    struct device_host_pair_int active_j =
+        init_device_host_pair_int(ncells * max_cell_size);
+    struct device_host_pair_float CoM_i =
+        init_device_host_pair_float(3 * max_cell_size);
+    struct device_host_pair_float CoM_j =
+        init_device_host_pair_float(3 * max_cell_size);
+
     int pack_count = 0;
-    
+
     {
       cudaError_t err = cudaGetLastError();
       if (err != cudaSuccess) printf("Error1: %s\n", cudaGetErrorString(err));
@@ -210,7 +241,7 @@ void *runner_main(void *data) {
 
         /* Get the task. */
         TIMER_TIC
-        t = scheduler_gettask(sched, r->qid, prev); //from here cell is locked
+        t = scheduler_gettask(sched, r->qid, prev);  // from here cell is locked
         TIMER_TOC(timer_gettask);
 
         /* Did I get anything? */
@@ -257,112 +288,103 @@ void *runner_main(void *data) {
             runner_doself2_branch_force(r, ci);
           else if (t->subtype == task_subtype_limiter)
             runner_doself1_branch_limiter(r, ci);
-            
-          //self grav recursive
-          else if (t->subtype == task_subtype_grav){
-            //make long arrays with all the values
+
+          // self grav recursive
+          else if (t->subtype == task_subtype_grav) {
+            // make long arrays with all the values
             struct gravity_cache *const ci_cache = &r->ci_gravity_cache;
             struct gravity_cache *const cj_cache = &r->cj_gravity_cache;
-  
-            //put values into long arrays
-            for (int i =0; i < max_cell_size; i++) {
-              h_i.host[pack_count*max_cell_size + i] = ci_cache->epsilon[i];
-              h_j.host[pack_count*max_cell_size + i] = cj_cache->epsilon[i];
-              mass_i.host[pack_count*max_cell_size + i] = ci_cache->m[i];
-              mass_j.host[pack_count*max_cell_size + i] = cj_cache->m[i];
-              x_i.host[pack_count*max_cell_size + i] = ci_cache->x[i];
-              x_j.host[pack_count*max_cell_size + i] = cj_cache->x[i];
-              y_i.host[pack_count*max_cell_size + i] = ci_cache->y[i];
-              y_j.host[pack_count*max_cell_size + i] = cj_cache->y[i];
-              z_i.host[pack_count*max_cell_size + i] = ci_cache->z[i];
-              z_j.host[pack_count*max_cell_size + i] = cj_cache->z[i];
-              a_x_i.host[pack_count*max_cell_size + i] = ci_cache->a_x[i];
-              a_x_j.host[pack_count*max_cell_size + i] = cj_cache->a_x[i];
-              a_y_i.host[pack_count*max_cell_size + i] = ci_cache->a_y[i];
-              a_y_j.host[pack_count*max_cell_size + i] = cj_cache->a_y[i];
-              a_z_i.host[pack_count*max_cell_size + i] = ci_cache->a_z[i];
-              a_z_j.host[pack_count*max_cell_size + i] = cj_cache->a_z[i];
-              pot_i.host[pack_count*max_cell_size + i] = ci_cache->pot[i];
-              pot_j.host[pack_count*max_cell_size + i] = cj_cache->pot[i];
-              active_i.host[pack_count*max_cell_size + i] = ci_cache->active[i];
-              active_j.host[pack_count*max_cell_size + i] = cj_cache->active[i];
-              // CoM_i.host[pack_count*3 + i] = ci_cache->active[i]; // TODO 
+
+            // put values into long arrays
+            for (int i = 0; i < max_cell_size; i++) {
+              h_i.host[pack_count * max_cell_size + i] = ci_cache->epsilon[i];
+              h_j.host[pack_count * max_cell_size + i] = cj_cache->epsilon[i];
+              mass_i.host[pack_count * max_cell_size + i] = ci_cache->m[i];
+              mass_j.host[pack_count * max_cell_size + i] = cj_cache->m[i];
+              x_i.host[pack_count * max_cell_size + i] = ci_cache->x[i];
+              x_j.host[pack_count * max_cell_size + i] = cj_cache->x[i];
+              y_i.host[pack_count * max_cell_size + i] = ci_cache->y[i];
+              y_j.host[pack_count * max_cell_size + i] = cj_cache->y[i];
+              z_i.host[pack_count * max_cell_size + i] = ci_cache->z[i];
+              z_j.host[pack_count * max_cell_size + i] = cj_cache->z[i];
+              a_x_i.host[pack_count * max_cell_size + i] = ci_cache->a_x[i];
+              a_x_j.host[pack_count * max_cell_size + i] = cj_cache->a_x[i];
+              a_y_i.host[pack_count * max_cell_size + i] = ci_cache->a_y[i];
+              a_y_j.host[pack_count * max_cell_size + i] = cj_cache->a_y[i];
+              a_z_i.host[pack_count * max_cell_size + i] = ci_cache->a_z[i];
+              a_z_j.host[pack_count * max_cell_size + i] = cj_cache->a_z[i];
+              pot_i.host[pack_count * max_cell_size + i] = ci_cache->pot[i];
+              pot_j.host[pack_count * max_cell_size + i] = cj_cache->pot[i];
+              active_i.host[pack_count * max_cell_size + i] =
+                  ci_cache->active[i];
+              active_j.host[pack_count * max_cell_size + i] =
+                  cj_cache->active[i];
+              // CoM_i.host[pack_count*3 + i] = ci_cache->active[i]; // TODO
               // CoM_j.host[pack_count*3 + i] = cj_cache->active[i];
-              //add two arrays for each particle to idenify where cj starts and ends
+              // add two arrays for each particle to idenify where cj starts and
+              // ends
             }
-            
+
             pack_count += 1;
-            //Here we need to unlock the cell(s)
-            //if arrays have been filled
+            // Here we need to unlock the cell(s)
+            // if arrays have been filled
             if (pack_count == ncells) {
-            	// printf("Outbound! GPU: %f CPU: %f \n", a_x_i.host[(pack_count-1)*max_cell_size+1], ci_cache->a_x[1]);
+              // printf("Outbound! GPU: %f CPU: %f \n",
+              // a_x_i.host[(pack_count-1)*max_cell_size+1], ci_cache->a_x[1]);
 
               const bool is_async = true;
               const cudaStream_t stream = NULL;
 
               host_to_device_float(&h_i, is_async, stream);
-              host_to_device_float(&h_j, is_async, stream);
               host_to_device_float(&mass_i, is_async, stream);
-              host_to_device_float(&mass_j, is_async, stream);
               host_to_device_float(&x_i, is_async, stream);
-              host_to_device_float(&x_j, is_async, stream);
               host_to_device_float(&y_i, is_async, stream);
-              host_to_device_float(&y_j, is_async, stream);
               host_to_device_float(&z_i, is_async, stream);
-              host_to_device_float(&z_j, is_async, stream);
               host_to_device_float(&a_x_i, is_async, stream);
-              host_to_device_float(&a_x_j, is_async, stream);
               host_to_device_float(&a_y_i, is_async, stream);
-              host_to_device_float(&a_y_j, is_async, stream);
               host_to_device_float(&a_z_i, is_async, stream);
-              host_to_device_float(&a_z_j, is_async, stream);
               host_to_device_float(&pot_i, is_async, stream);
-              host_to_device_float(&pot_j, is_async, stream);
               host_to_device_int(&active_i, is_async, stream);
-              host_to_device_int(&active_j, is_async, stream);
               host_to_device_float(&CoM_i, is_async, stream);
-              host_to_device_float(&CoM_j, is_async, stream);
-		
-              //cudaDeviceSynchronize();
-    			
-              runner_doself_recursive_grav(r, ci, 1, h_i.device, h_j.device, mass_i.device, mass_j.device, x_i.device, x_j.device, y_i.device, y_j.device, z_i.device, z_j.device, a_x_i.device, a_y_i.device, a_z_i.device, a_x_j.device, a_y_j.device, a_z_j.device, pot_i.device, pot_j.device, active_i.device, active_j.device, CoM_i.device, CoM_j.device);
-    		
-              //cudaDeviceSynchronize();
-		
+
+              // cudaDeviceSynchronize();
+
+              runner_doself_grav_pp_gpu(r, ci, d_h_i, d_mass_i, d_x_i, d_y_i,
+                                        d_z_i, d_a_x_i, d_a_y_i, d_a_z_i,
+                                        d_pot_i, d_active_i);
+              // cudaDeviceSynchronize();
+
               // a_x_i[1] = 0.f;
-              // printf("Reset to 0: %f \n", a_x_i[(pack_count-1)*max_cell_size+1]);
+              // printf("Reset to 0: %f \n",
+              // a_x_i[(pack_count-1)*max_cell_size+1]);
 
               device_to_host_float(&a_x_i, is_async, stream);
               device_to_host_float(&a_y_i, is_async, stream);
               device_to_host_float(&a_z_i, is_async, stream);
               device_to_host_float(&pot_i, is_async, stream);
 
-              device_to_host_float(&a_x_j, is_async, stream);
-              device_to_host_float(&a_y_j, is_async, stream);
-              device_to_host_float(&a_z_j, is_async, stream);
-              device_to_host_float(&pot_j, is_async, stream);
-		
               cudaDeviceSynchronize();
               {
                 cudaError_t err = cudaGetLastError();
-                if (err != cudaSuccess) printf("Error4: %s\n", cudaGetErrorString(err));
+                if (err != cudaSuccess)
+                  printf("Error4: %s\n", cudaGetErrorString(err));
               }
-              
-              // printf("Inbound! GPU: %f \n", a_x_i.host[(pack_count-1)*max_cell_size+1]);
-              //for(int pack=0; pack<pack_count; pack++){
-                //cii = cell_list[pack];
-                //same for cjj
-                //while (cell_locktree(cii);
-                //while (cell_locktree(cjj);)
-                //UNPACK
-                //unlock cells i and j
-                //enqueue_dependencies(); //Line 3296 in Abou repo
+
+              // printf("Inbound! GPU: %f \n",
+              // a_x_i.host[(pack_count-1)*max_cell_size+1]);
+              // for(int pack=0; pack<pack_count; pack++){
+              // cii = cell_list[pack];
+              // same for cjj
+              // while (cell_locktree(cii);
+              // while (cell_locktree(cjj);)
+              // UNPACK
+              // unlock cells i and j
+              // enqueue_dependencies(); //Line 3296 in Abou repo
               ///}
-              //reset counter for next pack
-            	pack_count = 0;
-            	}
+              // reset counter for next pack
+              pack_count = 0;
             }
-          else if (t->subtype == task_subtype_external_grav)
+          } else if (t->subtype == task_subtype_external_grav)
             runner_do_grav_external(r, ci, 1);
           else if (t->subtype == task_subtype_stars_density)
             runner_doself_branch_stars_density(r, ci);
@@ -411,9 +433,14 @@ void *runner_main(void *data) {
           else if (t->subtype == task_subtype_limiter)
             runner_dopair1_branch_limiter(r, ci, cj);
           else if (t->subtype == task_subtype_grav) {
-            runner_dopair_recursive_grav(r, ci, cj, 1, h_i.device, h_j.device, mass_i.device, mass_j.device, x_i.device, x_j.device, y_i.device, y_j.device, z_i.device, z_j.device, a_x_i.device, a_y_i.device, a_z_i.device, a_x_j.device, a_y_j.device, a_z_j.device, pot_i.device, pot_j.device, active_i.device, active_j.device, CoM_i.device, CoM_j.device);
-          }
-          else if (t->subtype == task_subtype_stars_density)
+            runner_dopair_recursive_grav(
+                r, ci, cj, 1, h_i.device, h_j.device, mass_i.device,
+                mass_j.device, x_i.device, x_j.device, y_i.device, y_j.device,
+                z_i.device, z_j.device, a_x_i.device, a_y_i.device,
+                a_z_i.device, a_x_j.device, a_y_j.device, a_z_j.device,
+                pot_i.device, pot_j.device, active_i.device, active_j.device,
+                CoM_i.device, CoM_j.device);
+          } else if (t->subtype == task_subtype_stars_density)
             runner_dopair_branch_stars_density(r, ci, cj);
 #ifdef EXTRA_STAR_LOOPS
           else if (t->subtype == task_subtype_stars_prep1)
@@ -773,12 +800,13 @@ void *runner_main(void *data) {
 
       /* We're done with this task, see if we get a next one. */
       prev = t;
-      //Here we need an if statement that schecks if iI am a gravity task
+      // Here we need an if statement that schecks if iI am a gravity task
       /*if(t->subtype == task_subtype_grav && t->type == t->type_self){
-        t=NULL;  
+        t=NULL;
       }
       else{*/
-      t = scheduler_done(sched, t); //This will unlock my deps and unleash hell!
+      t = scheduler_done(sched,
+                         t);  // This will unlock my deps and unleash hell!
       //}
     } /* main loop. */
 

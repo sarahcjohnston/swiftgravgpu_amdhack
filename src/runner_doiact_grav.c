@@ -1,4 +1,4 @@
- /*******************************************************************************
+/*******************************************************************************
  * This file is part of SWIFT.
  * Copyright (c) 2013 Pedro Gonnet (pedro.gonnet@durham.ac.uk)
  *               2016 Matthieu Schaller (schaller@strw.leidenuniv.nl)
@@ -1184,7 +1184,21 @@ static INLINE void runner_dopair_grav_pm_truncated(
   }
 }
 
-extern void pair_pp_offload(int periodic, const float *CoM_i, const float *CoM_j, float rmax_i, float rmax_j, double min_trunc, int* active_i, int* active_j, const float *dim, const float *x_i, const float *x_j_arr, const float *y_i, const float *y_j_arr, const float *z_i, const float *z_j_arr, float *pot_i, float *pot_j, float *a_x_i, float *a_y_i, float *a_z_i, float *a_x_j, float *a_y_j, float *a_z_j, float *mass_i_arr, float *mass_j_arr, const float *r_s_inv, float *h_i, float *h_j_arr, const int *gcount_i, const int *gcount_padded_i, const int *gcount_j, const int *gcount_padded_j, int ci_active, int cj_active, const int symmetric, float *epsilon, float *d_h_i, float *d_h_j, float *d_mass_i, float *d_mass_j, float *d_x_i, float *d_x_j, float *d_y_i, float *d_y_j, float *d_z_i, float *d_z_j, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_a_x_j, float *d_a_y_j, float *d_a_z_j, float *d_pot_i, float *d_pot_j, int *d_active_i, int *d_active_j, float *d_CoM_i, float *d_CoM_j);
+extern void pair_pp_offload(
+    int periodic, const float *CoM_i, const float *CoM_j, float rmax_i,
+    float rmax_j, double min_trunc, int *active_i, int *active_j, float *dim,
+    const float *x_i, const float *x_j_arr, const float *y_i,
+    const float *y_j_arr, const float *z_i, const float *z_j_arr, float *pot_i,
+    float *pot_j, float *a_x_i, float *a_y_i, float *a_z_i, float *a_x_j,
+    float *a_y_j, float *a_z_j, float *mass_i_arr, float *mass_j_arr,
+    const float *r_s_inv, float *h_i, float *h_j_arr, const int *gcount_i,
+    const int *gcount_padded_i, const int *gcount_j, const int *gcount_padded_j,
+    int ci_active, int cj_active, const int symmetric, float *epsilon,
+    float *d_h_i, float *d_h_j, float *d_mass_i, float *d_mass_j, float *d_x_i,
+    float *d_x_j, float *d_y_i, float *d_y_j, float *d_z_i, float *d_z_j,
+    float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_a_x_j,
+    float *d_a_y_j, float *d_a_z_j, float *d_pot_i, float *d_pot_j,
+    int *d_active_i, int *d_active_j, float *d_CoM_i, float *d_CoM_j);
 /**
  * @brief Computes the interaction of all the particles in a cell with all the
  * particles of another cell.
@@ -1205,7 +1219,15 @@ extern void pair_pp_offload(int periodic, const float *CoM_i, const float *CoM_j
  * @param allow_mpole Are we allowing the use of M2P interactions ?
  */
 void runner_dopair_grav_pp(struct runner *r, struct cell *ci, struct cell *cj,
-                           const int symmetric, const int allow_mpole, float *d_h_i, float *d_h_j, float *d_mass_i, float *d_mass_j, float *d_x_i, float *d_x_j, float *d_y_i, float *d_y_j, float *d_z_i, float *d_z_j, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_a_x_j, float *d_a_y_j, float *d_a_z_j, float *d_pot_i, float *d_pot_j, int *d_active_i, int *d_active_j, float *d_CoM_i, float *d_CoM_j) {
+                           const int symmetric, const int allow_mpole,
+                           float *d_h_i, float *d_h_j, float *d_mass_i,
+                           float *d_mass_j, float *d_x_i, float *d_x_j,
+                           float *d_y_i, float *d_y_j, float *d_z_i,
+                           float *d_z_j, float *d_a_x_i, float *d_a_y_i,
+                           float *d_a_z_i, float *d_a_x_j, float *d_a_y_j,
+                           float *d_a_z_j, float *d_pot_i, float *d_pot_j,
+                           int *d_active_i, int *d_active_j, float *d_CoM_i,
+                           float *d_CoM_j) {
 
   /* Recover some useful constants */
   const struct engine *e = r->e;
@@ -1279,115 +1301,44 @@ void runner_dopair_grav_pp(struct runner *r, struct cell *ci, struct cell *cj,
                          cj_cache, cj->grav.parts, gcount_j, gcount_padded_j,
                          shift_j, CoM_i, ci->grav.multipole, cj,
                          e->gravity_properties);
-                         
-  /*for (int i = 0; i < gcount_i; i++){                   
-  	printf("x_i: %.8f\n", ci_cache->x[i]);}
-  for (int i = 0; i < gcount_padded_j; i++){                   
-  	printf("x_j: %.8f\n", cj_cache->x[i]);}*/
-                         
-  pair_pp_offload(periodic, CoM_i, CoM_j, rmax_i, rmax_j, min_trunc, ci_cache->active, cj_cache->active, dim, ci_cache->x, cj_cache->x, ci_cache->y, cj_cache->y, ci_cache->z, cj_cache->z, ci_cache->pot, cj_cache->pot, ci_cache->a_x, ci_cache->a_y, ci_cache->a_z, cj_cache->a_x, cj_cache->a_y, cj_cache->a_z, ci_cache->m, cj_cache->m, &r_s_inv, ci_cache->epsilon, cj_cache->epsilon, &gcount_i, &gcount_padded_i, &gcount_j, &gcount_padded_j, ci_active, cj_active, symmetric, ci_cache->epsilon, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
-  
+
+  /*for (int i = 0; i < gcount_i; i++){
+        printf("x_i: %.8f\n", ci_cache->x[i]);}
+  for (int i = 0; i < gcount_padded_j; i++){
+        printf("x_j: %.8f\n", cj_cache->x[i]);}*/
+
+  pair_pp_offload(
+      periodic, CoM_i, CoM_j, rmax_i, rmax_j, min_trunc, ci_cache->active,
+      cj_cache->active, dim, ci_cache->x, cj_cache->x, ci_cache->y, cj_cache->y,
+      ci_cache->z, cj_cache->z, ci_cache->pot, cj_cache->pot, ci_cache->a_x,
+      ci_cache->a_y, ci_cache->a_z, cj_cache->a_x, cj_cache->a_y, cj_cache->a_z,
+      ci_cache->m, cj_cache->m, &r_s_inv, ci_cache->epsilon, cj_cache->epsilon,
+      &gcount_i, &gcount_padded_i, &gcount_j, &gcount_padded_j, ci_active,
+      cj_active, symmetric, ci_cache->epsilon, d_h_i, d_h_j, d_mass_i, d_mass_j,
+      d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i,
+      d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j,
+      d_CoM_i, d_CoM_j);
+
   /*printf("gcount_i: %i ", gcount_i);
-  	for (int i = 0; i < gcount_i; i++){
-  		printf("%.16f ", ci_cache->a_x[i]);}
-  	printf("\n");
-  	
+        for (int i = 0; i < gcount_i; i++){
+                printf("%.16f ", ci_cache->a_x[i]);}
+        printf("\n");
+
   printf("pot: %i ", gcount_i);
   for (int i = 0; i < gcount_i; i++){
-  	printf("%.16f ", ci_cache->pot[i]);}
+        printf("%.16f ", ci_cache->pot[i]);}
   printf("\n");*/
 
-  if (2<1){
-  /* Can we use the Newtonian version or do we need the truncated one ? */
-  if (!periodic) {
+  if (2 < 1) {
+    /* Can we use the Newtonian version or do we need the truncated one ? */
+    if (!periodic) {
 
-    /* Not periodic -> Can always use Newtonian potential */
-
-    /* Let's updated the active cell(s) only */
-    if (ci_active) {
-
-      /* First the P2P */
-      runner_dopair_grav_pp_full(ci_cache, cj_cache, gcount_i, gcount_j,
-                                 gcount_padded_j, periodic, dim, e,
-                                 ci->grav.parts, cj->grav.parts);
-
-      /* Then the M2P */
-      if (allow_multipole_j)
-        runner_dopair_grav_pm_full(ci_cache, gcount_padded_i, CoM_j, multi_j,
-                                   periodic, dim, e, ci->grav.parts, gcount_i,
-                                   cj);
-    }
-    if (cj_active && symmetric) {
-
-      /* First the P2P */
-      runner_dopair_grav_pp_full(cj_cache, ci_cache, gcount_j, gcount_i,
-                                 gcount_padded_i, periodic, dim, e,
-                                 cj->grav.parts, ci->grav.parts);
-
-      /* Then the M2P */
-      if (allow_multipole_i)
-        runner_dopair_grav_pm_full(cj_cache, gcount_padded_j, CoM_i, multi_i,
-                                   periodic, dim, e, cj->grav.parts, gcount_j,
-                                   ci);
-    }
-
-  } else { /* Periodic BC */
-
-    /* Get the relative distance between the CoMs */
-    double dx[3] = {CoM_j[0] - CoM_i[0], CoM_j[1] - CoM_i[1],
-                    CoM_j[2] - CoM_i[2]};
-
-    /* Correct for periodic BCs */
-    dx[0] = nearestf(dx[0], dim[0]);
-    dx[1] = nearestf(dx[1], dim[1]);
-    dx[2] = nearestf(dx[2], dim[2]);
-
-    const double r2 = dx[0] * dx[0] + dx[1] * dx[1] + dx[2] * dx[2];
-
-    /* Get the maximal distance between any two particles */
-    const double max_r = sqrt(r2) + rmax_i + rmax_j;
-
-    /* Do we need to use the truncated interactions ? */
-    if (max_r > min_trunc) {
-
-      /* Periodic but far-away cells must use the truncated potential */
+      /* Not periodic -> Can always use Newtonian potential */
 
       /* Let's updated the active cell(s) only */
       if (ci_active) {
 
-        /* First the (truncated) P2P */
-        runner_dopair_grav_pp_truncated(ci_cache, cj_cache, gcount_i, gcount_j,
-                                        gcount_padded_j, dim, r_s_inv, e,
-                                        ci->grav.parts, cj->grav.parts);
-
-        /* Then the M2P */
-        if (allow_multipole_j)
-          runner_dopair_grav_pm_truncated(ci_cache, gcount_padded_i, CoM_j,
-                                          multi_j, dim, r_s_inv, e,
-                                          ci->grav.parts, gcount_i, cj);
-      }
-      if (cj_active && symmetric) {
-
-        /* First the (truncated) P2P */
-        runner_dopair_grav_pp_truncated(cj_cache, ci_cache, gcount_j, gcount_i,
-                                        gcount_padded_i, dim, r_s_inv, e,
-                                        cj->grav.parts, ci->grav.parts);
-
-        /* Then the M2P */
-        if (allow_multipole_i)
-          runner_dopair_grav_pm_truncated(cj_cache, gcount_padded_j, CoM_i,
-                                          multi_i, dim, r_s_inv, e,
-                                          cj->grav.parts, gcount_j, ci);
-      }
-
-    } else {
-
-      /* Periodic but close-by cells can use the full Newtonian potential */
-
-      /* Let's updated the active cell(s) only */
-      if (ci_active) {
-
-        /* First the (Newtonian) P2P */
+        /* First the P2P */
         runner_dopair_grav_pp_full(ci_cache, cj_cache, gcount_i, gcount_j,
                                    gcount_padded_j, periodic, dim, e,
                                    ci->grav.parts, cj->grav.parts);
@@ -1400,7 +1351,7 @@ void runner_dopair_grav_pp(struct runner *r, struct cell *ci, struct cell *cj,
       }
       if (cj_active && symmetric) {
 
-        /* First the (Newtonian) P2P */
+        /* First the P2P */
         runner_dopair_grav_pp_full(cj_cache, ci_cache, gcount_j, gcount_i,
                                    gcount_padded_i, periodic, dim, e,
                                    cj->grav.parts, ci->grav.parts);
@@ -1411,8 +1362,89 @@ void runner_dopair_grav_pp(struct runner *r, struct cell *ci, struct cell *cj,
                                      periodic, dim, e, cj->grav.parts, gcount_j,
                                      ci);
       }
+
+    } else { /* Periodic BC */
+
+      /* Get the relative distance between the CoMs */
+      double dx[3] = {CoM_j[0] - CoM_i[0], CoM_j[1] - CoM_i[1],
+                      CoM_j[2] - CoM_i[2]};
+
+      /* Correct for periodic BCs */
+      dx[0] = nearestf(dx[0], dim[0]);
+      dx[1] = nearestf(dx[1], dim[1]);
+      dx[2] = nearestf(dx[2], dim[2]);
+
+      const double r2 = dx[0] * dx[0] + dx[1] * dx[1] + dx[2] * dx[2];
+
+      /* Get the maximal distance between any two particles */
+      const double max_r = sqrt(r2) + rmax_i + rmax_j;
+
+      /* Do we need to use the truncated interactions ? */
+      if (max_r > min_trunc) {
+
+        /* Periodic but far-away cells must use the truncated potential */
+
+        /* Let's updated the active cell(s) only */
+        if (ci_active) {
+
+          /* First the (truncated) P2P */
+          runner_dopair_grav_pp_truncated(
+              ci_cache, cj_cache, gcount_i, gcount_j, gcount_padded_j, dim,
+              r_s_inv, e, ci->grav.parts, cj->grav.parts);
+
+          /* Then the M2P */
+          if (allow_multipole_j)
+            runner_dopair_grav_pm_truncated(ci_cache, gcount_padded_i, CoM_j,
+                                            multi_j, dim, r_s_inv, e,
+                                            ci->grav.parts, gcount_i, cj);
+        }
+        if (cj_active && symmetric) {
+
+          /* First the (truncated) P2P */
+          runner_dopair_grav_pp_truncated(
+              cj_cache, ci_cache, gcount_j, gcount_i, gcount_padded_i, dim,
+              r_s_inv, e, cj->grav.parts, ci->grav.parts);
+
+          /* Then the M2P */
+          if (allow_multipole_i)
+            runner_dopair_grav_pm_truncated(cj_cache, gcount_padded_j, CoM_i,
+                                            multi_i, dim, r_s_inv, e,
+                                            cj->grav.parts, gcount_j, ci);
+        }
+
+      } else {
+
+        /* Periodic but close-by cells can use the full Newtonian potential */
+
+        /* Let's updated the active cell(s) only */
+        if (ci_active) {
+
+          /* First the (Newtonian) P2P */
+          runner_dopair_grav_pp_full(ci_cache, cj_cache, gcount_i, gcount_j,
+                                     gcount_padded_j, periodic, dim, e,
+                                     ci->grav.parts, cj->grav.parts);
+
+          /* Then the M2P */
+          if (allow_multipole_j)
+            runner_dopair_grav_pm_full(ci_cache, gcount_padded_i, CoM_j,
+                                       multi_j, periodic, dim, e,
+                                       ci->grav.parts, gcount_i, cj);
+        }
+        if (cj_active && symmetric) {
+
+          /* First the (Newtonian) P2P */
+          runner_dopair_grav_pp_full(cj_cache, ci_cache, gcount_j, gcount_i,
+                                     gcount_padded_i, periodic, dim, e,
+                                     cj->grav.parts, ci->grav.parts);
+
+          /* Then the M2P */
+          if (allow_multipole_i)
+            runner_dopair_grav_pm_full(cj_cache, gcount_padded_j, CoM_i,
+                                       multi_i, periodic, dim, e,
+                                       cj->grav.parts, gcount_j, ci);
+        }
+      }
     }
-  }
   }
 
   /* Write back to the particles in ci */
@@ -1436,14 +1468,16 @@ void runner_dopair_grav_pp(struct runner *r, struct cell *ci, struct cell *cj,
     if (lock_unlock(&cj->grav.plock) != 0) error("Error unlocking cell");
 #endif
   }
-  
+
   /*for (int i = 0; i < gcount_i; i++){
-  	printf("%.16f ", ci_cache->a_x[i]);}
+        printf("%.16f ", ci_cache->a_x[i]);}
   printf("\n");
-  
-  printf("%.16f %.16f %.16f %.16f\n", ci_cache->a_x[0], ci_cache->a_y[0], ci_cache->a_z[0], ci_cache->pot[0]);
-  printf("%.16f %.16f %.16f %.16f\n", cj_cache->a_x[0], cj_cache->a_y[0], cj_cache->a_z[0], cj_cache->pot[0]);
-  printf("%i %i %i %i\n", gcount_i, gcount_padded_i, gcount_j, gcount_padded_j);*/
+
+  printf("%.16f %.16f %.16f %.16f\n", ci_cache->a_x[0], ci_cache->a_y[0],
+  ci_cache->a_z[0], ci_cache->pot[0]); printf("%.16f %.16f %.16f %.16f\n",
+  cj_cache->a_x[0], cj_cache->a_y[0], cj_cache->a_z[0], cj_cache->pot[0]);
+  printf("%i %i %i %i\n", gcount_i, gcount_padded_i, gcount_j,
+  gcount_padded_j);*/
 
   TIMER_TOC(timer_dopair_grav_pp);
 }
@@ -1795,8 +1829,120 @@ static INLINE void runner_doself_grav_pp_truncated(
   }
 }
 
+extern void self_pp_offload(int periodic, float rmax_i, double min_trunc,
+                            int *active_i, const float *x_i, const float *y_i,
+                            const float *z_i, float *pot_i, float *a_x_i,
+                            float *a_y_i, float *a_z_i, float *mass_i_arr,
+                            const float *r_s_inv, float *h_i,
+                            const int *gcount_i, const int *gcount_padded_i,
+                            int ci_active, float *d_h_i, float *d_mass_i,
+                            float *d_x_i, float *d_y_i, float *d_z_i,
+                            float *d_a_x_i, float *d_a_y_i, float *d_a_z_i,
+                            float *d_pot_i, int *d_active_i);
+/**
+ * @brief Computes the interaction of all the particles in a cell with all the
+ * other ones.
+ *
+ * This is a GPU version of the function which ignores doing any form of
+ * recursion or offloads, we might as well use the compute at our fingertips.
+ *
+ * @param r The #runner.
+ * @param c The #cell.
+ */
+void runner_doself_grav_pp_gpu(struct runner *r, struct cell *c, float *d_h_i,
+                               float *d_mass_i, float *d_x_i, float *d_y_i,
+                               float *d_z_i, float *d_a_x_i, float *d_a_y_i,
+                               float *d_a_z_i, float *d_pot_i,
+                               int *d_active_i) {
 
-extern void self_pp_offload(int periodic, float rmax_i, double min_trunc, int* active_i, const float *x_i, const float *y_i, const float *z_i, float *pot_i, float *a_x_i, float *a_y_i, float *a_z_i, float *mass_i_arr, const float *r_s_inv, float *h_i, const int *gcount_i, const int *gcount_padded_i, int ci_active, float *d_h_i, float *d_mass_i, float *d_x_i, float *d_y_i, float *d_z_i, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_pot_i, int *d_active_i);
+  /* Recover some useful constants */
+  const struct engine *e = r->e;
+  const int periodic = e->mesh->periodic;
+  const float r_s_inv = e->mesh->r_s_inv;
+  const double min_trunc = e->mesh->r_cut_min;
+
+  TIMER_TIC;
+
+#ifdef SWIFT_DEBUG_CHECKS
+  if (c->grav.count == 0) error("Doing self gravity on an empty cell !");
+#endif
+
+  /* Anything to do here? */
+  if (!cell_is_active_gravity(c, e)) return;
+
+  /* Do we need to start by drifting things ? */
+  if (!cell_are_gpart_drifted(c, e)) error("Un-drifted gparts");
+
+  /* Start by constructing a cache for the particles */
+  struct gravity_cache *const ci_cache = &r->ci_gravity_cache;
+
+  /* Shift to apply to the particles in the cell */
+  const double loc[3] = {c->loc[0] + 0.5 * c->width[0],
+                         c->loc[1] + 0.5 * c->width[1],
+                         c->loc[2] + 0.5 * c->width[2]};
+
+  /* Computed the padded counts */
+  const int gcount = c->grav.count;
+  const int gcount_padded = gcount - (gcount % VEC_SIZE) + VEC_SIZE;
+
+  /* Fill the cache */
+  gravity_cache_populate_no_mpole(e->max_active_bin, ci_cache, c->grav.parts,
+                                  gcount, gcount_padded, loc, c,
+                                  e->gravity_properties);
+
+  const float rmax = c->grav.multipole->r_max;
+  const int ci_active =
+      cell_is_active_gravity(c, e) && (c->nodeID == e->nodeID);
+
+  self_pp_offload(periodic, rmax, min_trunc, ci_cache->active, ci_cache->x,
+                  ci_cache->y, ci_cache->z, ci_cache->pot, ci_cache->a_x,
+                  ci_cache->a_y, ci_cache->a_z, ci_cache->m, &r_s_inv,
+                  ci_cache->epsilon, &gcount, &gcount_padded, ci_active, d_h_i,
+                  d_mass_i, d_x_i, d_y_i, d_z_i, d_a_x_i, d_a_y_i, d_a_z_i,
+                  d_pot_i, d_active_i);
+
+  /* Physhic damage! */
+  if (2 < 1) {
+    /* Can we use the Newtonian version or do we need the truncated one ? */
+    if (!periodic) {
+
+      /* Not periodic -> Can always use Newtonian potential */
+      runner_doself_grav_pp_full(ci_cache, gcount, gcount_padded, e,
+                                 c->grav.parts);
+
+    } else {
+
+      /* Get the maximal distance between any two particles */
+      const double max_r = 2. * c->grav.multipole->r_max;
+
+      /* Do we need to use the truncated interactions ? */
+      if (max_r > min_trunc) {
+
+        /* Periodic but far-away cells must use the truncated potential */
+        runner_doself_grav_pp_truncated(ci_cache, gcount, gcount_padded,
+                                        r_s_inv, e, c->grav.parts);
+
+      } else {
+
+        /* Periodic but close-by cells can use the full Newtonian potential */
+        runner_doself_grav_pp_full(ci_cache, gcount, gcount_padded, e,
+                                   c->grav.parts);
+      }
+    }
+  }
+
+  /* Write back to the particles */
+#ifndef SWIFT_TASKS_WITHOUT_ATOMICS
+  lock_lock(&c->grav.plock);
+#endif
+  gravity_cache_write_back(ci_cache, c->grav.parts, gcount);
+#ifndef SWIFT_TASKS_WITHOUT_ATOMICS
+  if (lock_unlock(&c->grav.plock) != 0) error("Error unlocking cell");
+#endif
+
+  TIMER_TOC(timer_doself_grav_pp);
+}
+
 /**
  * @brief Computes the interaction of all the particles in a cell with all the
  * other ones.
@@ -1811,7 +1957,10 @@ extern void self_pp_offload(int periodic, float rmax_i, double min_trunc, int* a
  * @param r The #runner.
  * @param c The #cell.
  */
-void runner_doself_grav_pp(struct runner *r, struct cell *c, float *d_h_i, float *d_mass_i, float *d_x_i, float *d_y_i, float *d_z_i, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_pot_i,int *d_active_i) {
+void runner_doself_grav_pp(struct runner *r, struct cell *c, float *d_h_i,
+                           float *d_mass_i, float *d_x_i, float *d_y_i,
+                           float *d_z_i, float *d_a_x_i, float *d_a_y_i,
+                           float *d_a_z_i, float *d_pot_i, int *d_active_i) {
 
   /* Recover some useful constants */
   const struct engine *e = r->e;
@@ -1850,40 +1999,45 @@ void runner_doself_grav_pp(struct runner *r, struct cell *c, float *d_h_i, float
   gravity_cache_populate_no_mpole(e->max_active_bin, ci_cache, c->grav.parts,
                                   gcount, gcount_padded, loc, c,
                                   e->gravity_properties);
-                                  
+
   const float rmax = c->grav.multipole->r_max;
   const int ci_active =
       cell_is_active_gravity(c, e) && (c->nodeID == e->nodeID);
-                                  
-  self_pp_offload(periodic, rmax, min_trunc, ci_cache->active, ci_cache->x, ci_cache->y, ci_cache->z, ci_cache->pot, ci_cache->a_x, ci_cache->a_y, ci_cache->a_z, ci_cache->m, &r_s_inv, ci_cache->epsilon, &gcount, &gcount_padded, ci_active, d_h_i, d_mass_i, d_x_i, d_y_i, d_z_i, d_a_x_i, d_a_y_i, d_a_z_i, d_pot_i, d_active_i);
 
-  if(2<1){
-  /* Can we use the Newtonian version or do we need the truncated one ? */
-  if (!periodic) {
+  self_pp_offload(periodic, rmax, min_trunc, ci_cache->active, ci_cache->x,
+                  ci_cache->y, ci_cache->z, ci_cache->pot, ci_cache->a_x,
+                  ci_cache->a_y, ci_cache->a_z, ci_cache->m, &r_s_inv,
+                  ci_cache->epsilon, &gcount, &gcount_padded, ci_active, d_h_i,
+                  d_mass_i, d_x_i, d_y_i, d_z_i, d_a_x_i, d_a_y_i, d_a_z_i,
+                  d_pot_i, d_active_i);
 
-    /* Not periodic -> Can always use Newtonian potential */
-    runner_doself_grav_pp_full(ci_cache, gcount, gcount_padded, e,
-                               c->grav.parts);
+  if (2 < 1) {
+    /* Can we use the Newtonian version or do we need the truncated one ? */
+    if (!periodic) {
 
-  } else {
-
-    /* Get the maximal distance between any two particles */
-    const double max_r = 2. * c->grav.multipole->r_max;
-
-    /* Do we need to use the truncated interactions ? */
-    if (max_r > min_trunc) {
-
-      /* Periodic but far-away cells must use the truncated potential */
-      runner_doself_grav_pp_truncated(ci_cache, gcount, gcount_padded, r_s_inv,
-                                      e, c->grav.parts);
+      /* Not periodic -> Can always use Newtonian potential */
+      runner_doself_grav_pp_full(ci_cache, gcount, gcount_padded, e,
+                                 c->grav.parts);
 
     } else {
 
-      /* Periodic but close-by cells can use the full Newtonian potential */
-      runner_doself_grav_pp_full(ci_cache, gcount, gcount_padded, e,
-                                 c->grav.parts);
+      /* Get the maximal distance between any two particles */
+      const double max_r = 2. * c->grav.multipole->r_max;
+
+      /* Do we need to use the truncated interactions ? */
+      if (max_r > min_trunc) {
+
+        /* Periodic but far-away cells must use the truncated potential */
+        runner_doself_grav_pp_truncated(ci_cache, gcount, gcount_padded,
+                                        r_s_inv, e, c->grav.parts);
+
+      } else {
+
+        /* Periodic but close-by cells can use the full Newtonian potential */
+        runner_doself_grav_pp_full(ci_cache, gcount, gcount_padded, e,
+                                   c->grav.parts);
+      }
     }
-  }
   }
 
   /* Write back to the particles */
@@ -2227,8 +2381,13 @@ void runner_dopair_recursive_grav_pm(struct runner *r, struct cell *ci,
  * @param cj The other #cell.
  * @param gettimer Are we timing this ?
  */
-void runner_dopair_recursive_grav(struct runner *r, struct cell *ci,
-                                  struct cell *cj, const int gettimer, float *d_h_i, float *d_h_j, float *d_mass_i, float *d_mass_j, float *d_x_i, float *d_x_j, float *d_y_i, float *d_y_j, float *d_z_i, float *d_z_j, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_a_x_j, float *d_a_y_j, float *d_a_z_j, float *d_pot_i, float *d_pot_j, int *d_active_i, int *d_active_j, float *d_CoM_i, float *d_CoM_j) {
+void runner_dopair_recursive_grav(
+    struct runner *r, struct cell *ci, struct cell *cj, const int gettimer,
+    float *d_h_i, float *d_h_j, float *d_mass_i, float *d_mass_j, float *d_x_i,
+    float *d_x_j, float *d_y_i, float *d_y_j, float *d_z_i, float *d_z_j,
+    float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_a_x_j,
+    float *d_a_y_j, float *d_a_z_j, float *d_pot_i, float *d_pot_j,
+    int *d_active_i, int *d_active_j, float *d_CoM_i, float *d_CoM_j) {
 
   const struct engine *e = r->e;
 
@@ -2334,7 +2493,11 @@ void runner_dopair_recursive_grav(struct runner *r, struct cell *ci,
   } else if (!ci->split && !cj->split) {
 
     /* We have two leaves. Go P-P. */
-    runner_dopair_grav_pp(r, ci, cj, /*symmetric*/ 1, /*allow_mpoles=*/1, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
+    runner_dopair_grav_pp(r, ci, cj, /*symmetric*/ 1, /*allow_mpoles=*/1, d_h_i,
+                          d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j,
+                          d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j,
+                          d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i,
+                          d_active_j, d_CoM_i, d_CoM_j);
 
   } else {
 
@@ -2353,7 +2516,11 @@ void runner_dopair_recursive_grav(struct runner *r, struct cell *ci,
         /* Loop over ci's children */
         for (int k = 0; k < 8; k++) {
           if (ci->progeny[k] != NULL)
-            runner_dopair_recursive_grav(r, ci->progeny[k], cj, 0, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
+            runner_dopair_recursive_grav(
+                r, ci->progeny[k], cj, 0, d_h_i, d_h_j, d_mass_i, d_mass_j,
+                d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i,
+                d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j,
+                d_active_i, d_active_j, d_CoM_i, d_CoM_j);
         }
 
       } else {
@@ -2364,7 +2531,11 @@ void runner_dopair_recursive_grav(struct runner *r, struct cell *ci,
         /* Loop over cj's children */
         for (int k = 0; k < 8; k++) {
           if (cj->progeny[k] != NULL)
-            runner_dopair_recursive_grav(r, ci, cj->progeny[k], 0, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
+            runner_dopair_recursive_grav(
+                r, ci, cj->progeny[k], 0, d_h_i, d_h_j, d_mass_i, d_mass_j,
+                d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i,
+                d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j,
+                d_active_i, d_active_j, d_CoM_i, d_CoM_j);
         }
       }
     } else {
@@ -2375,7 +2546,11 @@ void runner_dopair_recursive_grav(struct runner *r, struct cell *ci,
         /* Loop over cj's children */
         for (int k = 0; k < 8; k++) {
           if (cj->progeny[k] != NULL)
-            runner_dopair_recursive_grav(r, ci, cj->progeny[k], 0, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
+            runner_dopair_recursive_grav(
+                r, ci, cj->progeny[k], 0, d_h_i, d_h_j, d_mass_i, d_mass_j,
+                d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i,
+                d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j,
+                d_active_i, d_active_j, d_CoM_i, d_CoM_j);
         }
 
       } else {
@@ -2386,7 +2561,11 @@ void runner_dopair_recursive_grav(struct runner *r, struct cell *ci,
         /* Loop over ci's children */
         for (int k = 0; k < 8; k++) {
           if (ci->progeny[k] != NULL)
-            runner_dopair_recursive_grav(r, ci->progeny[k], cj, 0, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
+            runner_dopair_recursive_grav(
+                r, ci->progeny[k], cj, 0, d_h_i, d_h_j, d_mass_i, d_mass_j,
+                d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i,
+                d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j,
+                d_active_i, d_active_j, d_CoM_i, d_CoM_j);
         }
       }
     }
@@ -2405,8 +2584,13 @@ void runner_dopair_recursive_grav(struct runner *r, struct cell *ci,
  * @param c The first #cell.
  * @param gettimer Are we timing this ?
  */
-void runner_doself_recursive_grav(struct runner *r, struct cell *c,
-                                  const int gettimer, float *d_h_i, float *d_h_j, float *d_mass_i, float *d_mass_j, float *d_x_i, float *d_x_j, float *d_y_i, float *d_y_j, float *d_z_i, float *d_z_j, float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_a_x_j, float *d_a_y_j, float *d_a_z_j, float *d_pot_i, float *d_pot_j, int *d_active_i, int *d_active_j, float *d_CoM_i, float *d_CoM_j) {
+void runner_doself_recursive_grav(
+    struct runner *r, struct cell *c, const int gettimer, float *d_h_i,
+    float *d_h_j, float *d_mass_i, float *d_mass_j, float *d_x_i, float *d_x_j,
+    float *d_y_i, float *d_y_j, float *d_z_i, float *d_z_j, float *d_a_x_i,
+    float *d_a_y_i, float *d_a_z_i, float *d_a_x_j, float *d_a_y_j,
+    float *d_a_z_j, float *d_pot_i, float *d_pot_j, int *d_active_i,
+    int *d_active_j, float *d_CoM_i, float *d_CoM_j) {
 
   /* Some constants */
   const struct engine *e = r->e;
@@ -2424,30 +2608,8 @@ void runner_doself_recursive_grav(struct runner *r, struct cell *c,
   /* Anything to do here? */
   if (!cell_is_active_gravity(c, e)) return;
 
-  /* If the cell is split, interact each progeny with itself, and with
-     each of its siblings. */
-  if (c->split) {
-
-    for (int j = 0; j < 8; j++) {
-      if (c->progeny[j] != NULL) {
-
-        runner_doself_recursive_grav(r, c->progeny[j], 0, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
-
-        for (int k = j + 1; k < 8; k++) {
-          if (c->progeny[k] != NULL) {
-
-            runner_dopair_recursive_grav(r, c->progeny[j], c->progeny[k], 0, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j, d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j, d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j, d_CoM_i, d_CoM_j);
-          }
-        }
-      }
-    }
-  }
-
-  /* If the cell is not split, then just go for it... */
-  else {
-
-    runner_doself_grav_pp(r, c, d_h_i, d_mass_i, d_x_i, d_y_i, d_z_i, d_a_x_i, d_a_y_i, d_a_z_i, d_pot_i, d_active_i);
-  }
+  runner_doself_grav_pp(r, c, d_h_i, d_mass_i, d_x_i, d_y_i, d_z_i, d_a_x_i,
+                        d_a_y_i, d_a_z_i, d_pot_i, d_active_i);
 
   if (gettimer) TIMER_TOC(timer_dosub_self_grav);
 }
@@ -2547,7 +2709,7 @@ void runner_do_grav_long_range(struct runner *r, struct cell *ci,
       multi_i->pot.interacted = 1;
 
     } /* We are in charge of this pair */
-  }   /* Loop over top-level cells */
+  } /* Loop over top-level cells */
 
   if (timer) TIMER_TOC(timer_dograv_long_range);
 }
