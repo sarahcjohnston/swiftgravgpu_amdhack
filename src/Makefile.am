@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 CUDALDFLAGS = -L/usr/local/cuda/lib64 -I/usr/local/cuda/include
-CUDALIBS= -lcudadevrt -lcudart -lcuda -lstdc++
+CUDALIBS = -lcudadevrt -lcudart -lcuda -lstdc++
 
 # Add the non-standard paths to the included library headers
 AM_CFLAGS = $(HDF5_CPPFLAGS) $(GSL_INCS) $(FFTW_INCS) $(NUMA_INCS) $(GRACKLE_INCS)  $(SUNDIALS_INCS) $(CHEALPIX_CFLAGS) -L/usr/local/cuda/lib64 -I/usr/local/cuda/include
@@ -82,7 +82,7 @@ include_HEADERS += adaptive_softening.h adaptive_softening_iact.h adaptive_softe
 include_HEADERS += forcing.h
 include_HEADERS += power_spectrum.h
 include_HEADERS += ghost_stats.h
-include_HEADERS += gpu_params.h gpu_malloc.h cuda_utils.h
+include_HEADERS += gpu_params.h gpu_malloc.h gpu_utils.h
 
 # source files for EAGLE extra I/O
 EAGLE_EXTRA_IO_SOURCES=
@@ -210,7 +210,7 @@ AM_SOURCES += $(AGORA_FEEDBACK_SOURCES)
 AM_SOURCES += $(PS2020_COOLING_SOURCES)
 AM_SOURCES += $(SPHM1RT_RT_SOURCES)
 AM_SOURCES += $(GEAR_RT_SOURCES)
-AM_SOURCES += gpu_params.c gpu_malloc.cu cuda_utils.c
+AM_SOURCES += gpu_params.c gpu_malloc.cu gpu_utils.c
 
 # Include files for distribution, not installation.
 nobase_noinst_HEADERS = align.h approx_math.h atomic.h barrier.h cycle.h error.h inline.h kernel_hydro.h kernel_gravity.h 

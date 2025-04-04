@@ -48,7 +48,7 @@ extern "C" {
 #include "feedback.h"
 #include "gpu_params.h"
 // #include "gpu_malloc.h"
-#include "cuda_utils.h"
+#include "gpu_utils.h"
 #include "parser.h"
 #include "runner_doiact_sinks.h"
 #include "scheduler.h"

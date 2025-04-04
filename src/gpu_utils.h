@@ -1,5 +1,5 @@
-#ifndef SWIFT_CUDA_UTILS
-#define SWIFT_CUDA_UTILS
+#ifndef SWIFT_GPU_UTILS
+#define SWIFT_GPU_UTILS
 
 #include <stdbool.h>
 #include <error.h>

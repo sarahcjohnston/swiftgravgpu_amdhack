@@ -1,4 +1,4 @@
-#include "cuda_utils.h"
+#include "gpu_utils.h"
 
 /**
  * @brief 
