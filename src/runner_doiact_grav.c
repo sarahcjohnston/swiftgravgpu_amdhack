@@ -1199,6 +1199,7 @@ extern void pair_pp_offload(
     float *d_a_x_i, float *d_a_y_i, float *d_a_z_i, float *d_a_x_j,
     float *d_a_y_j, float *d_a_z_j, float *d_pot_i, float *d_pot_j,
     int *d_active_i, int *d_active_j, float *d_CoM_i, float *d_CoM_j);
+
 /**
  * @brief Computes the interaction of all the particles in a cell with all the
  * particles of another cell.

@@ -45,8 +45,8 @@ extern "C" {
 /* Local headers. */
 #include "engine.h"
 #include "feedback.h"
-#include "gpu_malloc.h"
 #include "gpu_params.h"
+#include "hip_utils.h"
 #include "parser.h"
 #include "runner_doiact_sinks.h"
 #include "scheduler.h"
@@ -161,9 +161,7 @@ void *runner_main(void *data) {
   struct engine *e = r->e;
   struct scheduler *sched = &e->sched;
 
-  // TODO: automate method for getting max cell size value
-  int max_cell_size = 8000;  // parser_get_opt_param_int(params,
-                             // "Scheduler:cell_split_size", space_splitsize);
+  int max_cell_size = space_splitsize;
 
   /* Main loop. */
   while (1) {
@@ -178,108 +176,61 @@ void *runner_main(void *data) {
     struct task *t = NULL;
     struct task *prev = NULL;
 
-    /* floats needed for GPU calculations */
-    float *h_i;
-    float *h_j;
-    float *mass_i;
-    float *mass_j;
-    float *x_i;
-    float *x_j;
-    float *y_i;
-    float *y_j;
-    float *z_i;
-    float *z_j;
-    float *a_x_i;
-    float *a_y_i;
-    float *a_z_i;
-    float *a_x_j;
-    float *a_y_j;
-    float *a_z_j;
-    float *pot_i;
-    float *pot_j;
-    int *active_i;
-    int *active_j;
-    float *CoM_i;
-    float *CoM_j;
-    float *d_h_i;
-    float *d_h_j;
-    float *d_mass_i;
-    float *d_mass_j;
-    float *d_x_i;
-    float *d_x_j;
-    float *d_y_i;
-    float *d_y_j;
-    float *d_z_i;
-    float *d_z_j;
-    float *d_a_x_i;
-    float *d_a_y_i;
-    float *d_a_z_i;
-    float *d_a_x_j;
-    float *d_a_y_j;
-    float *d_a_z_j;
-    float *d_pot_i;
-    float *d_pot_j;
-    int *d_active_i;
-    int *d_active_j;
-    float *d_CoM_i;
-    float *d_CoM_j;
-
     // define number of cells to transfer
     int ncells = 1;  // THIS VERSION ONLY WORKS FOR ONE CELL (which does
                      // somewhat negate the purpose but its getting there...)
 
-    // allocate memory on host
-    hipMallocHost((void **)&h_i, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&h_j, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&mass_i, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&mass_j, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&x_i, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&x_j, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&y_i, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&y_j, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&z_i, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&z_j, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&a_x_i, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&a_y_i, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&a_z_i, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&a_x_j, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&a_y_j, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&a_z_j, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&pot_i, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&pot_j, ncells * max_cell_size * sizeof(float));
-    hipMallocHost((void **)&active_i, ncells * max_cell_size * sizeof(int));
-    hipMallocHost((void **)&active_j, ncells * max_cell_size * sizeof(int));
-    hipMallocHost((void **)&CoM_i, ncells * 3 * sizeof(float));
-    hipMallocHost((void **)&CoM_j, ncells * 3 * sizeof(float));
-
-    // allocate memory on device
-    hipMalloc((void **)&d_h_i, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_h_j, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_mass_i, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_mass_j, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_x_i, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_x_j, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_y_i, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_y_j, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_z_i, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_z_j, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_a_x_i, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_a_y_i, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_a_z_i, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_a_x_j, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_a_y_j, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_a_z_j, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_pot_i, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_pot_j, ncells * max_cell_size * sizeof(float));
-    hipMalloc((void **)&d_active_i, ncells * max_cell_size * sizeof(int));
-    hipMalloc((void **)&d_active_j, ncells * max_cell_size * sizeof(int));
-    hipMalloc((void **)&d_CoM_i, ncells * 3 * sizeof(float));
-    hipMalloc((void **)&d_CoM_j, ncells * 3 * sizeof(float));
+    struct device_host_pair_float h_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float h_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float mass_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float mass_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float x_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float x_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float y_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float y_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float z_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float z_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_x_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_y_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_z_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_x_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_y_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float a_z_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float pot_i =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_float pot_j =
+        init_device_host_pair_float(ncells * max_cell_size);
+    struct device_host_pair_int active_i =
+        init_device_host_pair_int(ncells * max_cell_size);
+    struct device_host_pair_int active_j =
+        init_device_host_pair_int(ncells * max_cell_size);
+    struct device_host_pair_float CoM_i =
+        init_device_host_pair_float(3 * max_cell_size);
+    struct device_host_pair_float CoM_j =
+        init_device_host_pair_float(3 * max_cell_size);
 
     int pack_count = 0;
 
-    hipError_t err = hipGetLastError();
-    if (err != hipSuccess) printf("Error1: %s\n", hipGetErrorString(err));
+    {
+      hipError_t err = hipGetLastError();
+      if (err != hipSuccess) printf("Error1: %s\n", hipGetErrorString(err));
+    }
 
     /* Loop while there are tasks... */
     while (1) {
@@ -339,24 +290,36 @@ void *runner_main(void *data) {
 
           // self grav recursive
           else if (t->subtype == task_subtype_grav) {
-            // make long arrays with all the values
+            /* Make long arrays with all the values */
             struct gravity_cache *const ci_cache = &r->ci_gravity_cache;
             struct gravity_cache *const cj_cache = &r->cj_gravity_cache;
 
-            // put values into long arrays
-            for (int i = 0; i < max_cell_size;
-                 i++) {  // change to gcount for cell
-              h_i[pack_count * max_cell_size + i] = ci_cache->epsilon[i];
-              mass_i[pack_count * max_cell_size + i] = ci_cache->m[i];
-              x_i[pack_count * max_cell_size + i] = ci_cache->x[i];
-              y_i[pack_count * max_cell_size + i] = ci_cache->y[i];
-              z_i[pack_count * max_cell_size + i] = ci_cache->z[i];
-              a_x_i[pack_count * max_cell_size + i] = ci_cache->a_x[i];
-              a_y_i[pack_count * max_cell_size + i] = ci_cache->a_y[i];
-              a_z_i[pack_count * max_cell_size + i] = ci_cache->a_z[i];
-              pot_i[pack_count * max_cell_size + i] = ci_cache->pot[i];
-              active_i[pack_count * max_cell_size + i] = ci_cache->active[i];
-              //CoM_i[pack_count * max_cell_size + i] = ci_cache->active[i];
+            /* Put values into long arrays */
+            for (int i = 0; i < max_cell_size; i++) {
+              h_i.host[pack_count * max_cell_size + i] = ci_cache->epsilon[i];
+              h_j.host[pack_count * max_cell_size + i] = cj_cache->epsilon[i];
+              mass_i.host[pack_count * max_cell_size + i] = ci_cache->m[i];
+              mass_j.host[pack_count * max_cell_size + i] = cj_cache->m[i];
+              x_i.host[pack_count * max_cell_size + i] = ci_cache->x[i];
+              x_j.host[pack_count * max_cell_size + i] = cj_cache->x[i];
+              y_i.host[pack_count * max_cell_size + i] = ci_cache->y[i];
+              y_j.host[pack_count * max_cell_size + i] = cj_cache->y[i];
+              z_i.host[pack_count * max_cell_size + i] = ci_cache->z[i];
+              z_j.host[pack_count * max_cell_size + i] = cj_cache->z[i];
+              a_x_i.host[pack_count * max_cell_size + i] = ci_cache->a_x[i];
+              a_x_j.host[pack_count * max_cell_size + i] = cj_cache->a_x[i];
+              a_y_i.host[pack_count * max_cell_size + i] = ci_cache->a_y[i];
+              a_y_j.host[pack_count * max_cell_size + i] = cj_cache->a_y[i];
+              a_z_i.host[pack_count * max_cell_size + i] = ci_cache->a_z[i];
+              a_z_j.host[pack_count * max_cell_size + i] = cj_cache->a_z[i];
+              pot_i.host[pack_count * max_cell_size + i] = ci_cache->pot[i];
+              pot_j.host[pack_count * max_cell_size + i] = cj_cache->pot[i];
+              active_i.host[pack_count * max_cell_size + i] =
+                  ci_cache->active[i];
+              active_j.host[pack_count * max_cell_size + i] =
+                  cj_cache->active[i];
+              // CoM_i.host[pack_count*3 + i] = ci_cache->active[i]; // TODO
+              // CoM_j.host[pack_count*3 + i] = cj_cache->active[i];
               // add two arrays for each particle to idenify where cj starts and
               // ends
             }
@@ -366,71 +329,31 @@ void *runner_main(void *data) {
             // if arrays have been filled
             if (pack_count == ncells) {
 
-              printf("Outbound! GPU: %f CPU: %f \n",
-                     a_x_i[(pack_count - 1) * max_cell_size + 1],
-                     ci_cache->a_x[1]);
+              const bool is_async = true;
+              const hipStream_t stream = NULL;
 
-              // now copy all the arrays to the device
-              hipMemcpyAsync(d_h_i, h_i, ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_h_j, h_j, ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_mass_i, mass_i,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_mass_j, mass_j,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_x_i, x_i, ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_y_i, y_i, ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_z_i, z_i, ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_x_j, x_j, ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_y_j, y_j, ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_z_j, z_j, ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_a_x_i, a_x_i,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_a_y_i, a_y_i,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_a_z_i, a_z_i,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_a_x_j, a_x_j,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_a_y_j, a_y_j,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_a_z_j, a_z_j,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_pot_i, pot_i,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_pot_j, pot_j,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_active_i, active_i,
-                             ncells * max_cell_size * sizeof(int),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_active_j, active_j,
-                             ncells * max_cell_size * sizeof(int),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_CoM_i, CoM_i, ncells * 3 * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-              hipMemcpyAsync(d_CoM_j, CoM_j, ncells * 3 * sizeof(float),
-                             hipMemcpyHostToDevice, 0);
-
-              hipError_t err = hipGetLastError();
-              if (err != hipSuccess)
-                printf("Error2: %s\n", hipGetErrorString(err));
+              host_to_device_float(&h_i, is_async, stream);
+              host_to_device_float(&h_j, is_async, stream);
+              host_to_device_float(&mass_i, is_async, stream);
+              host_to_device_float(&mass_j, is_async, stream);
+              host_to_device_float(&x_i, is_async, stream);
+              host_to_device_float(&x_j, is_async, stream);
+              host_to_device_float(&y_i, is_async, stream);
+              host_to_device_float(&y_j, is_async, stream);
+              host_to_device_float(&z_i, is_async, stream);
+              host_to_device_float(&z_j, is_async, stream);
+              host_to_device_float(&a_x_i, is_async, stream);
+              host_to_device_float(&a_x_j, is_async, stream);
+              host_to_device_float(&a_y_i, is_async, stream);
+              host_to_device_float(&a_y_j, is_async, stream);
+              host_to_device_float(&a_z_i, is_async, stream);
+              host_to_device_float(&a_z_j, is_async, stream);
+              host_to_device_float(&pot_i, is_async, stream);
+              host_to_device_float(&pot_j, is_async, stream);
+              host_to_device_int(&active_i, is_async, stream);
+              host_to_device_int(&active_j, is_async, stream);
+              host_to_device_float(&CoM_i, is_async, stream);
+              host_to_device_float(&CoM_j, is_async, stream);
 
               // hipDeviceSynchronize();
 
@@ -440,42 +363,29 @@ void *runner_main(void *data) {
 
               // hipDeviceSynchronize();
 
-              a_x_i[1] = 0.f;
-              printf("Reset to 0: %f \n",
-                     a_x_i[(pack_count - 1) * max_cell_size + 1]);
+              // a_x_i[1] = 0.f;
+              // printf("Reset to 0: %f \n",
+              // a_x_i[(pack_count-1)*max_cell_size+1]);
 
-              hipMemcpyAsync(a_x_i, d_a_x_i,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyDeviceToHost, 0);
-              hipMemcpyAsync(a_y_i, d_a_y_i,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyDeviceToHost, 0);
-              hipMemcpyAsync(a_z_i, d_a_z_i,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyDeviceToHost, 0);
-              hipMemcpyAsync(a_x_j, d_a_x_j,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyDeviceToHost, 0);
-              hipMemcpyAsync(a_y_j, d_a_y_j,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyDeviceToHost, 0);
-              hipMemcpyAsync(a_z_j, d_a_z_j,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyDeviceToHost, 0);
-              hipMemcpyAsync(pot_i, d_pot_i,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyDeviceToHost, 0);
-              hipMemcpyAsync(pot_j, d_pot_j,
-                             ncells * max_cell_size * sizeof(float),
-                             hipMemcpyDeviceToHost, 0);
+              device_to_host_float(&a_x_i, is_async, stream);
+              device_to_host_float(&a_y_i, is_async, stream);
+              device_to_host_float(&a_z_i, is_async, stream);
+              device_to_host_float(&pot_i, is_async, stream);
+
+              device_to_host_float(&a_x_j, is_async, stream);
+              device_to_host_float(&a_y_j, is_async, stream);
+              device_to_host_float(&a_z_j, is_async, stream);
+              device_to_host_float(&pot_j, is_async, stream);
 
               hipDeviceSynchronize();
-              hipError_t err3 = hipGetLastError();
-              if (err != hipSuccess)
-                printf("Error4: %s\n", hipGetErrorString(err3));
+              {
+                hipError_t err = hipGetLastError();
+                if (err != hipSuccess)
+                  printf("Error4: %s\n", hipGetErrorString(err));
+              }
 
-              printf("Inbound! GPU: %f \n",
-                     a_x_i[(pack_count - 1) * max_cell_size + 1]);
+              // printf("Inbound! GPU: %f \n",
+              // a_x_i.host[(pack_count-1)*max_cell_size+1]);
               // for(int pack=0; pack<pack_count; pack++){
               // cii = cell_list[pack];
               // same for cjj
@@ -537,47 +447,15 @@ void *runner_main(void *data) {
           else if (t->subtype == task_subtype_limiter)
             runner_dopair1_branch_limiter(r, ci, cj);
           else if (t->subtype == task_subtype_grav) {
-            /*//pseudo memcpy function
-            //make long arrays with all the values
-            struct gravity_cache *const ci_cache = &r->ci_gravity_cache;
-            struct gravity_cache *const cj_cache = &r->cj_gravity_cache;
-
-            h_i[pack_count*max_cell_size] = ci_cache->epsilon;
-            h_j[pack_count*max_cell_size] = cj_cache->epsilon;
-            mass_i[pack_count*max_cell_size] = ci_cache->m;
-            mass_j[pack_count*max_cell_size] = cj_cache->m;
-            x_i[pack_count*max_cell_size] = ci_cache->x;
-            x_j[pack_count*max_cell_size] = cj_cache->x;
-            y_i[pack_count*max_cell_size] = ci_cache->y;
-            y_j[pack_count*max_cell_size] = cj_cache->y;
-            z_i[pack_count*max_cell_size] = ci_cache->z;
-            z_j[pack_count*max_cell_size] = cj_cache->z;
-            a_x_i[pack_count*max_cell_size] = ci_cache->a_x;
-            a_x_j[pack_count*max_cell_size] = cj_cache->a_x;
-            a_y_i[pack_count*max_cell_size] = ci_cache->a_y;
-            a_y_j[pack_count*max_cell_size] = cj_cache->a_y;
-            a_z_i[pack_count*max_cell_size] = ci_cache->a_z;
-            a_z_j[pack_count*max_cell_size] = cj_cache->a_z;
-            pot_i[pack_count*max_cell_size] = ci_cache->pot;
-            pot_j[pack_count*max_cell_size] = cj_cache->pot;
-            active_i[pack_count*max_cell_size] = ci_cache->active;
-            active_j[pack_count*max_cell_size] = cj_cache->active;
-            CoM_i[pack_count*max_cell_size] = ci_cache->active;
-            CoM_j[pack_count*max_cell_size] = cj_cache->active;
-
-            pack_count += 1;
-
-            if (pack_count == ncells){
-
-
-            //need to memcpy final values to device when read
-            */
-
+            /* TODO: When attached to runner in batches this function will only
+             * need the runner called like others */
             runner_dopair_recursive_grav(
-                r, ci, cj, 1, d_h_i, d_h_j, d_mass_i, d_mass_j, d_x_i, d_x_j,
-                d_y_i, d_y_j, d_z_i, d_z_j, d_a_x_i, d_a_y_i, d_a_z_i, d_a_x_j,
-                d_a_y_j, d_a_z_j, d_pot_i, d_pot_j, d_active_i, d_active_j,
-                d_CoM_i, d_CoM_j);
+                r, ci, cj, 1, h_i.device, h_j.device, mass_i.device,
+                mass_j.device, x_i.device, x_j.device, y_i.device, y_j.device,
+                z_i.device, z_j.device, a_x_i.device, a_y_i.device,
+                a_z_i.device, a_x_j.device, a_y_j.device, a_z_j.device,
+                pot_i.device, pot_j.device, active_i.device, active_j.device,
+                CoM_i.device, CoM_j.device);
           } else if (t->subtype == task_subtype_stars_density)
             runner_dopair_branch_stars_density(r, ci, cj);
 #ifdef EXTRA_STAR_LOOPS
@@ -947,29 +825,31 @@ void *runner_main(void *data) {
                          t);  // This will unlock my deps and unleash hell!
       //}
     } /* main loop. */
-    hipFree(d_h_i);
-    hipFree(d_h_j);
-    hipFree(d_mass_i);
-    hipFree(d_mass_j);
-    hipFree(d_x_i);
-    hipFree(d_x_j);
-    hipFree(d_y_i);
-    hipFree(d_y_j);
-    hipFree(d_z_i);
-    hipFree(d_z_j);
-    hipFree(d_a_x_i);
-    hipFree(d_a_y_i);
-    hipFree(d_a_z_i);
-    hipFree(d_a_x_j);
-    hipFree(d_a_y_j);
-    hipFree(d_a_z_j);
-    hipFree(d_pot_i);
-    hipFree(d_pot_j);
-    hipFree(d_active_i);
-    hipFree(d_active_j);
-    hipFree(d_CoM_i);
-    hipFree(d_CoM_j);
+
+    free_device_host_pair_float(&h_i);
+    free_device_host_pair_float(&h_j);
+    free_device_host_pair_float(&mass_i);
+    free_device_host_pair_float(&mass_j);
+    free_device_host_pair_float(&x_i);
+    free_device_host_pair_float(&x_j);
+    free_device_host_pair_float(&y_i);
+    free_device_host_pair_float(&y_j);
+    free_device_host_pair_float(&z_i);
+    free_device_host_pair_float(&z_j);
+    free_device_host_pair_float(&a_x_i);
+    free_device_host_pair_float(&a_y_i);
+    free_device_host_pair_float(&a_z_i);
+    free_device_host_pair_float(&a_x_j);
+    free_device_host_pair_float(&a_y_j);
+    free_device_host_pair_float(&a_z_j);
+    free_device_host_pair_float(&pot_i);
+    free_device_host_pair_float(&pot_j);
+    free_device_host_pair_int(&active_i);
+    free_device_host_pair_int(&active_j);
+    free_device_host_pair_float(&CoM_i);
+    free_device_host_pair_float(&CoM_j);
   }
+
   /* Be kind, rewind. */
   return NULL;
 }
