@@ -336,27 +336,16 @@ void *runner_main(void *data) {
               const cudaStream_t stream = NULL;
 
               host_to_device_float(&h_i, is_async, stream);
-              host_to_device_float(&h_j, is_async, stream);
               host_to_device_float(&mass_i, is_async, stream);
-              host_to_device_float(&mass_j, is_async, stream);
               host_to_device_float(&x_i, is_async, stream);
-              host_to_device_float(&x_j, is_async, stream);
               host_to_device_float(&y_i, is_async, stream);
-              host_to_device_float(&y_j, is_async, stream);
               host_to_device_float(&z_i, is_async, stream);
-              host_to_device_float(&z_j, is_async, stream);
               host_to_device_float(&a_x_i, is_async, stream);
-              host_to_device_float(&a_x_j, is_async, stream);
               host_to_device_float(&a_y_i, is_async, stream);
-              host_to_device_float(&a_y_j, is_async, stream);
               host_to_device_float(&a_z_i, is_async, stream);
-              host_to_device_float(&a_z_j, is_async, stream);
               host_to_device_float(&pot_i, is_async, stream);
-              host_to_device_float(&pot_j, is_async, stream);
               host_to_device_int(&active_i, is_async, stream);
-              host_to_device_int(&active_j, is_async, stream);
               host_to_device_float(&CoM_i, is_async, stream);
-              host_to_device_float(&CoM_j, is_async, stream);
 
               // cudaDeviceSynchronize();
 
@@ -373,11 +362,6 @@ void *runner_main(void *data) {
               device_to_host_float(&a_y_i, is_async, stream);
               device_to_host_float(&a_z_i, is_async, stream);
               device_to_host_float(&pot_i, is_async, stream);
-
-              device_to_host_float(&a_x_j, is_async, stream);
-              device_to_host_float(&a_y_j, is_async, stream);
-              device_to_host_float(&a_z_j, is_async, stream);
-              device_to_host_float(&pot_j, is_async, stream);
 
               cudaDeviceSynchronize();
               {
