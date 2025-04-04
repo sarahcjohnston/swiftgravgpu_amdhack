@@ -2,7 +2,7 @@
 #define GPU_PARAMS_H
 
 //#include <cuda.h>
-//#include <cuda_runtime.h>
+//#include <hip_runtime.h>
 
 /* Local includes */
 #include "parser.h"

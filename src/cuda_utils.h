@@ -1,11 +1,11 @@
-#ifndef SWIFT_CUDA_UTILS
-#define SWIFT_CUDA_UTILS
+#ifndef SWIFT_hip_UTILS
+#define SWIFT_hip_UTILS
 
 #include <stdbool.h>
 #include <error.h>
-#include <cuda_runtime.h>
+#include <hip_runtime.h>
 
-#define CRASH_ON_CUDA_ERROR(fn_call, err_str) if(fn_call != cudaSuccess) error(err_str)
+#define CRASH_ON_hip_ERROR(fn_call, err_str) if(fn_call != cudaSuccess) error(err_str)
 
 struct device_host_pair_float {
   float *device;

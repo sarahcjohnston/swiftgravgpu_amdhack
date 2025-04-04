@@ -6,7 +6,7 @@
 
 /* Cuda inlcudes */
 //#include <cuda.h>
-//#include <cuda_runtime.h>
+//#include <hip_runtime.h>
 
 extern void gpu_device_props(struct gpu_info *gpu_info);
 
