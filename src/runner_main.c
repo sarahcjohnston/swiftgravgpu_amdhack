@@ -43,10 +43,10 @@ extern "C" {
 #include "runner.h"
 
 /* Local headers. */
+#include "cuda_utils.h"
 #include "engine.h"
 #include "feedback.h"
 #include "gpu_params.h"
-#include "hip_utils.h"
 #include "parser.h"
 #include "runner_doiact_sinks.h"
 #include "scheduler.h"
