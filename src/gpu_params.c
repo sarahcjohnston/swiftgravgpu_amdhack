@@ -5,8 +5,8 @@
 #include "error.h"
 
 /* Cuda inlcudes */
-//#include <cuda.h>
-//#include <hip_runtime.h>
+// #include <cuda.h>
+// #include <hip/hip_runtime.h>
 
 extern void gpu_device_props(struct gpu_info *gpu_info);
 

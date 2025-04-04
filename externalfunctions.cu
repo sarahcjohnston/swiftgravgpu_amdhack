@@ -5,7 +5,7 @@
 #include <math.h>
 #include <time.h>
 #include <cuda.h>
-#include <hip_runtime.h>
+#include <hip/hip_runtime.h>
 #include <unistd.h>
 #include "multipole_struct.h"
 #include "error.h"

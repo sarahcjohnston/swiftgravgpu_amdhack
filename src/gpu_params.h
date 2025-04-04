@@ -1,8 +1,8 @@
 #ifndef GPU_PARAMS_H
 #define GPU_PARAMS_H
 
-//#include <cuda.h>
-//#include <hip_runtime.h>
+// #include <cuda.h>
+// #include <hip/hip_runtime.h>
 
 /* Local includes */
 #include "parser.h"

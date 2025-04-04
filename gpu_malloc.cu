@@ -1,5 +1,5 @@
 #include <cuda.h>
-#include <hip_runtime.h>
+#include <hip/hip_runtime.h>
 #include <stdio.h>
 
 /* In GPU-land need to allocate memory for the values */

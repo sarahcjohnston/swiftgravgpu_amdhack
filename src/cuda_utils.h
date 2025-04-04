@@ -1,11 +1,12 @@
 #ifndef SWIFT_hip_UTILS
 #define SWIFT_hip_UTILS
 
-#include <stdbool.h>
 #include <error.h>
-#include <hip_runtime.h>
+#include <hip/hip_runtime.h>
+#include <stdbool.h>
 
-#define CRASH_ON_hip_ERROR(fn_call, err_str) if(fn_call != cudaSuccess) error(err_str)
+#define CRASH_ON_hip_ERROR(fn_call, err_str) \
+  if (fn_call != cudaSuccess) error(err_str)
 
 struct device_host_pair_float {
   float *device;
@@ -15,8 +16,10 @@ struct device_host_pair_float {
 
 struct device_host_pair_float init_device_host_pair_float(int number_of_items);
 void free_device_host_pair_float(struct device_host_pair_float *in);
-void host_to_device_float(const struct device_host_pair_float *in, bool is_async, cudaStream_t stream);
-void device_to_host_float(const struct device_host_pair_float *in, bool is_async, cudaStream_t stream);
+void host_to_device_float(const struct device_host_pair_float *in,
+                          bool is_async, cudaStream_t stream);
+void device_to_host_float(const struct device_host_pair_float *in,
+                          bool is_async, cudaStream_t stream);
 
 struct device_host_pair_int {
   int *device;
@@ -26,7 +29,9 @@ struct device_host_pair_int {
 
 struct device_host_pair_int init_device_host_pair_int(int number_of_items);
 void free_device_host_pair_int(struct device_host_pair_int *in);
-void host_to_device_int(const struct device_host_pair_int *in, bool is_async, cudaStream_t stream);
-void device_to_host_int(const struct device_host_pair_int *in, bool is_async, cudaStream_t stream);
+void host_to_device_int(const struct device_host_pair_int *in, bool is_async,
+                        cudaStream_t stream);
+void device_to_host_int(const struct device_host_pair_int *in, bool is_async,
+                        cudaStream_t stream);
 
 #endif
